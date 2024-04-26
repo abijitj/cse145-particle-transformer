@@ -18,6 +18,7 @@ class ParticleTransformerWrapper(torch.nn.Module):
         return {'mod.cls_token', }
 
     def forward(self, points, features, lorentz_vectors, mask):
+        # = input_tuple
         return self.mod(features, v=lorentz_vectors, mask=mask)
 
 
