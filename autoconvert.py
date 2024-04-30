@@ -7,6 +7,8 @@ from torch.autograd import Variable
 from pytorch2keras import pytorch_to_keras
 import numpy as np
 
+# THIS SCRIPT DOES NOT WORK SUCCESSFULLY BUT DEMOS THE WORK PUT INTO
+# AUTOMATED TRANSLATION
 
 data_config = DataConfig.load('data/JetClass/JetClass_full.yaml')
 print(data_config)
@@ -26,7 +28,7 @@ pf_mask_var = Variable(torch.FloatTensor(np.random.uniform(0, 1, (1, 1, 128))))
 
 # we should specify shape of the input tensor
 
-k_model = pytorch_to_keras(pytorch_model,pf_points_var, pf_features_var, pf_vectors_var, pf_mask_var, input_shapes=input_shape, verbose=True)
+k_model = pytorch_to_keras(pytorch_model,[pf_points_var, pf_features_var, pf_vectors_var, pf_mask_var], input_shapes=input_shape, verbose=True)
 
 #input_np = 
 #input_torch = Variable()
