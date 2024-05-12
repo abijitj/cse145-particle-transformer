@@ -16,6 +16,11 @@ This repo contains a project that is working towards building a quantized and mo
    <img width="762" alt="截屏2024-04-27 18 54 18" src="https://github.com/abijitj/cse145-particle-transformer/assets/79886525/b5537d2d-8199-4178-b0b3-0b2dc9c01481">
    <img width="731" alt="截屏2024-04-27 19 43 21" src="https://github.com/abijitj/cse145-particle-transformer/assets/79886525/e6e00183-33e8-4739-b8c0-40924f4aefb1">
 
+
+# Pytroch to Keras and QKeras translation
+ - [nanoPGT translation](https://github.com/abijitj/nanoGPT)
+ - [bigram translation](https://github.com/JuanYin1/smallGPT_keras)
+
    
 
 
