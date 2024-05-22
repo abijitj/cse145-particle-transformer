@@ -7,9 +7,6 @@ _DROPOUT = 0.1
 
 class ParticleMultiHeadAttention(k.Model): 
     """ multiple heads of self-attention in parallel """
-    def build(self, input_shape):
-        pass
-
     def __init__(self, num_heads, head_size, n_embd): 
         super().__init__()
         self.n_embd = n_embd

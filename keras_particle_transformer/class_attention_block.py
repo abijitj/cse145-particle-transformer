@@ -2,12 +2,19 @@ import numpy as np
 import tensorflow as tf
 import keras as k
 from tqdm import tqdm
-
 from gpt_keras import Head
 
-
 class MultiHeadAttention(k.Model): 
-    pass    
+    """ multiple heads of self-attention in parallel """
+    def __init__(self, num_heads, head_size, n_embd): 
+        super().__init__()
+        self.heads = [Head(head_size) for _ in range(num_heads)]
+        self.proj = k.layers.Dense(n_embd)
+
+    def call(self, x):
+        out = k.layers.concatenate([h(x) for h in self.heads], axis=-1)
+        out = self.proj(out)
+        return out
 
 
 class ClassAttentionBlock(k.Model):
@@ -27,7 +34,7 @@ class ClassAttentionBlock(k.Model):
         super().__init__()
         self.concat = k.layers.Concatenate(axis=-1)
         self.ln1 = k.layers.LayerNormalization()
-        self.mha = MultiHeadAttention(n_head, n_embd // n_head)
+        self.mha = MultiHeadAttention(n_head, n_embd // n_head, n_embd)
         self.ln2 = k.layers.LayerNormalization()
         self.ln3 = k.layers.LayerNormalization()
         self.d1 = k.layers.Dense(n_embd, activation='gelu')    
