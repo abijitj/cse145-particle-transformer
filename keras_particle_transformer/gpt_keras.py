@@ -96,6 +96,7 @@ class Head(k.Model):
     def __init__(self, head_size): 
         super().__init__()
         self.key = QDense(head_size, use_bias=False)
+        #print('hs', head_size)
 
         self.transpose = k.layers.Permute((2, 1))
 
@@ -107,6 +108,7 @@ class Head(k.Model):
     def call(self, x):
         B, T, C = x.shape
         K = self.key(x) # (B, T, C)
+        #print(K.shape, x.shape, 'K')
         q = self.query(x) # (B, T, C)
 
         # compute attention scores ("affinities")
