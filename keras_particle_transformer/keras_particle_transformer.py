@@ -3,6 +3,9 @@ import tensorflow as tf
 import keras as k
 from tqdm import tqdm
 from qkeras import QDense
+from particle_attention_block import ParticleAttentionBlock
+from class_attention_block import ClassAttentionBlock
+
 
 # hyperparameters
 batch_size = 32 # how many independent sequences will we process in parallel?
@@ -14,9 +17,18 @@ steps_per_epoch = 500
 device = "/GPU:0" if tf.config.list_physical_devices('GPU') else "/cpu:0"
 eval_iters = 30
 n_embd = 256
-n_head = 5
+
+# Particle attention params
+particle_attention_dropout = 0.1
+n_particle_heads = 4
+n_class_heads = 2
+
+# Class attention params
 dropout = 0.2
 n_layer = 5
+
+n_classes = 10
+
 
 tf.random.set_seed(0)
 # ------------
@@ -122,63 +134,9 @@ class Head(k.Model):
         v = self.value(x)
         out = wei @ v # (B, T, T) @ (B, T, C) -> (B, T, C)
         return out 
-
-
-class MultiHeadAttention(k.Model): 
-    """ multiple heads of self-attention in parallel """
-    def build(self, input_shape):
-        pass
-    def __init__(self, num_heads, head_size): 
-        super().__init__()
-        self.heads = [Head(head_size) for _ in range(num_heads)]
-        self.proj = QDense(n_embd)
-        self.dropout = k.layers.Dropout(dropout)
-
-    def call(self, x):
-        out = k.layers.concatenate([h(x) for h in self.heads], axis=-1)
-        out = self.dropout(self.proj(out))
-        return out
-
-
-class FeedForward(k.Model):
-    """ a simple linear layer followed by a non-linearity """
-    def build(self, input_shape):
-        pass
-    def __init__(self, n_embd): 
-        super().__init__()
-        self.l1 = QDense(4 * n_embd, activation='relu')
-        #self.relu = k.layers.Activation('relu')
-        self.l2 = QDense(n_embd)
-        self.dropout = k.layers.Dropout(dropout)
-    
-    def call(self, x): 
-        x = self.l1(x)
-        x = self.dropout(self.l2(x))
-        return x
-
-
-class Block(k.Model): 
-    """ Transformer block: communication followed by computation """
-    def build(self, input_shape):
-        pass
-    def __init__(self, n_embd, n_head): 
-        super().__init__()
-        # n_embd: embedding dimension, n_head: the number of heads we'd like
-        head_size = n_embd // n_head
-        self.sa = MultiHeadAttention(n_head, head_size)
-        self.ffwd = FeedForward(n_embd)
-        self.ln1 = k.layers.LayerNormalization()
-        self.ln2 = k.layers.LayerNormalization()
-    
-    def call(self, x):
-        x = x + self.sa(self.ln1(x))
-        x = x + self.ffwd(self.ln2(x))
-        #x = x + self.ln1(x)
-        return x
     
 
-class GPTModel(k.Model): 
-    """ GPT Decoder-only Model """
+class ParticleTransformerModel(k.Model): 
     def build(self, input_shape):
         pass
 
@@ -187,25 +145,31 @@ class GPTModel(k.Model):
         # each token directly reads off the logits for the next token from a lookup table
         self.token_embedding_table = k.layers.Embedding(vocab_size, n_embd)
         self.position_embedding_table = k.layers.Embedding(block_size, n_embd)
-        self.blocks = [Block(n_embd, n_head) for _ in range(n_layer)]
-        self.ln_f = k.layers.LayerNormalization(n_embd) # final layer norm
-        self.lm_head = QDense(vocab_size)
+        self.particle_attention_blocks = [ParticleAttentionBlock(n_embd, n_particle_heads, particle_attention_dropout) for _ in range(n_layer)]
+        self.class_attention_blocks = [ClassAttentionBlock(n_embd, n_class_heads) for _ in range(n_layer)]
+        self.mlp = QDense(n_classes)
+        self.softmax = k.layers.Softmax()
     
     def call(self, idx, training=True, targets=None): 
         B, T = idx.shape
 
         # idx and targets are both (B,T) tensor of integers
-        tok_emb = self.token_embedding_table(idx) # (B,T,C)
-        pos_emb = self.position_embedding_table(np.arange(T))#, device=device)) # (T,C)
-        x = tok_emb + pos_emb
+        #tok_emb = self.token_embedding_table(idx) # (B,T,C)
+        #pos_emb = self.position_embedding_table(np.arange(T))#, device=device)) # (T,C)
+        # TODO: create x and U
+        x = None
+        U = None
+        class_token = None
 
-        for block in self.blocks:
-            x = block(x)
+        for block in self.particle_attention_blocks:
+            x = block(x, U)
         
-        logits = self.lm_head(x) # (B,T,vocab_size)
+        for block in self.class_attention_blocks:
+            class_token = block(x, class_token)
+            
+        logits = self.softmax(self.mlp(class_token))
+        
         if targets is None:
-            #B, T, C = logits.shape
-            #logits = tf.reshape(logits, (B*T, C))
             loss = None
         else:
             B, T, C = logits.shape
@@ -213,9 +177,9 @@ class GPTModel(k.Model):
             logits = tf.reshape(logits, (B*T, C))
             targets = tf.reshape(targets, (B*T,1))
             
-            loss = k.losses.SparseCategoricalCrossentropy(from_logits=True)(targets, logits)
-            #loss = tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=targets)
-            #loss = k.losses.CategoricalCrossentropy()(targets, logits)
+            #TODO check if from_logits=False is correct since now we do softmax
+            loss = k.losses.SparseCategoricalCrossentropy(from_logits=False)(targets, logits)
+
         if not training:
             return logits, loss
         return logits
@@ -250,7 +214,7 @@ model = GPTModel()
 
 with tf.device(device):
     #loss = k.losses.CategoricalCrossentropy(from_logits=True, label_smoothing=1)
-    loss_function = k.losses.SparseCategoricalCrossentropy(from_logits=True)
+    loss_function = k.losses.SparseCategoricalCrossentropy(from_logits=False)
     # loss = tf.nn.softmax_cross_entropy_with_logits
     model.compile(
         optimizer=k.optimizers.Adam(learning_rate=learning_rate),
