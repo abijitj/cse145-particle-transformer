@@ -3,16 +3,15 @@ import numpy as np
 import tensorflow as tf
 import keras as k
 
-_DROPOUT = 0.1
 
 class ParticleMultiHeadAttention(k.Model): 
     """ multiple heads of self-attention in parallel """
-    def __init__(self, num_heads, head_size, n_embd): 
+    def __init__(self, num_heads, head_size, n_embd, dropout: float): 
         super().__init__()
         self.n_embd = n_embd
-        self.heads = [Head(head_size) for _ in range(num_heads)]
+        self.heads = [Head(head_size, dropout) for _ in range(num_heads)]
         self.proj = QDense(n_embd)
-        self.dropout = k.layers.Dropout(_DROPOUT)
+        self.dropout = k.layers.Dropout(dropout)
 
     def call(self, x, U):
         out = k.layers.concatenate([h(x, U) for h in self.heads], axis=-1)
@@ -22,7 +21,7 @@ class ParticleMultiHeadAttention(k.Model):
 class Head(k.Model):
     def build(self, input_shape):
         pass
-    def __init__(self, head_size): 
+    def __init__(self, head_size, dropout:float): 
         super().__init__()
         self.key = QDense(head_size, use_bias=False)
 
@@ -31,7 +30,7 @@ class Head(k.Model):
         self.query = QDense(head_size, use_bias=False)
         self.value = QDense(head_size, use_bias=False)
         
-        self.dropout = k.layers.Dropout(_DROPOUT)
+        self.dropout = k.layers.Dropout(dropout)
 
     def call(self, x, U):
         B, T, C = x.shape
@@ -52,15 +51,15 @@ class Head(k.Model):
         return out 
 
 
-class ParticleBlock(k.Model): 
+class ParticleAttentionBlock(k.Model): 
     """ Transformer block: communication followed by computation """
     def build(self, input_shape):
         pass
-    def __init__(self, n_embd, n_head): 
+    def __init__(self, n_embd, n_head, dropout): 
         super().__init__()
         # n_embd: embedding dimension, n_head: the number of heads we'd like
         head_size = n_embd // n_head
-        self.sa = ParticleMultiHeadAttention(n_head, head_size)
+        self.sa = ParticleMultiHeadAttention(n_head, head_size, n_embd, dropout)
         self.ln1 = k.layers.LayerNormalization()
         self.ln2 = k.layers.LayerNormalization()
         self.ln3 = k.layers.LayerNormalization()
@@ -68,7 +67,7 @@ class ParticleBlock(k.Model):
         self.linear1 = QDense(n_embd)
         self.linear2 = QDense(n_embd)
         self.gelu = k.layers.Activation('gelu')
-        self.dropout = k.layers.Dropout(_DROPOUT)
+        self.dropout = k.layers.Dropout(dropout)
     
     def call(self, x, U):
         x = x + self.ln2(self.sa(self.ln1(x)))
