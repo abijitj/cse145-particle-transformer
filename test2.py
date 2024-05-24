@@ -101,14 +101,14 @@ def preprocess_particles(x_particles, num_particles, num_particle_features):
     particles = x_particles.reshape(num_jets * max_elements * index3, num_particle_features)
     return particles
 
-def preprocess_interaction(x_particles, num_particle_features): # U matrix (N, N, C'), # pairwise interactions between all particles in the jet and feeding numebrs
+def preprocess_interaction(particles_matrix, num_particle_features): # U matrix (N, N, C'), # pairwise interactions between all particles in the jet and feeding numebrs
     # initalize the shape with all 0
-    N = particles_matrix.shape[0]
-    C_prime = 2 * particles_matrix.shape[1]
+    N = num_jets * max_elements * index3
+    C_prime = 2 * num_particle_features
     interaction = np.zeros((N, N, C_prime))
     # pairwise interactions between all particles in the jet and feeding numebrs
-    matrix1 = x_particles.reshape(num_jets * num_particles * index3, C_prime)
-    matrix2 = matrix1
+    matrix1 = particles_matrix
+    matrix2 = particles_matrix
     for i in range(N):
         for j in range(N):
             interaction[i, j] = np.concatenate((matrix1[i], matrix2[j]))
@@ -116,7 +116,7 @@ def preprocess_interaction(x_particles, num_particle_features): # U matrix (N, N
 
 # Get particles matrix (N,C)
 particles_matrix = preprocess_particles(x_particles, num_particles, num_particle_features)
-
+print(particles_matrix.shape)
 # Get interaction matrix (N, N, C')
 interaction_matrix = preprocess_interaction(particles_matrix, num_particle_features)
 
