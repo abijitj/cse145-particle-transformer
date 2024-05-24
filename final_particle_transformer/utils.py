@@ -8,8 +8,6 @@ import warnings
 import copy
 from functools import partial
 
-from weaver.utils.logger import _logger
-
 import tensorflow as tf
 
 @tf.function
