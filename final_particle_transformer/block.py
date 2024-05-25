@@ -1,6 +1,7 @@
 import numpy as np 
 import tensorflow as tf 
 import keras as k 
+from multi_head_attention import MultiHeadAttention
 
 class Block(k.Model):
     """ Block for Particle Transformer (both Particle Attention and Class Attention) """
@@ -15,12 +16,11 @@ class Block(k.Model):
         self.ffn_dim = embed_dim * ffn_ratio
         
         self.pre_attn_norm = k.layers.LayerNormalization()
-        self.attn = k.layers.MultiHeadAttention(
-            num_heads=num_heads, 
-            key_dim=embed_dim, 
-            dropout=attn_dropout,
-            use_bias=add_bias_kv
-        )
+        self.attn = MultiHeadAttention(num_heads=num_heads, 
+                                       head_size=embed_dim, 
+                                       dropout=attn_dropout,
+                                       use_bias=add_bias_kv)
+        
         self.post_attn_norm = k.layers.LayerNormalization() if scale_attn else None
         self.dropout = k.layers.Dropout(dropout)
         
@@ -56,14 +56,12 @@ class Block(k.Model):
             u = self.pre_attn_norm(u)   
 
             # (1, batch, embed_dim)
-            x, attn_weights = self.attn(u, u, return_attention_scores=True, 
-                                        attention_mask=padding_mask)
+            x = self.attn(x_cls, u) #TODO: May need to implement padding and attn masks
             x = x[:1]  # Extract the class token part
         else:
             residual = x
             x = self.pre_attn_norm(x)
-            x, attn_weights = self.attn(x, x, return_attention_scores=True, 
-                                        attention_mask=attn_mask)
+            x = self.attn(x, x)
         
         if self.c_attn is not None:
             tgt_len = tf.shape(x)[0]
