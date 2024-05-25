@@ -1,3 +1,5 @@
+""" MultiHeadAttention class for Particle Transformer """
+
 import numpy as np
 import tensorflow as tf
 import keras
@@ -38,7 +40,7 @@ class Head(keras.Model):
         return out 
 
 
-class MultiHeadAttention(k.Model): 
+class MultiHeadAttention(keras.Model): 
     """ Multiple heads of attention in parallel """
     def __init__(self, num_heads, head_size, n_embd, dropout=0.0): 
         super().__init__()
