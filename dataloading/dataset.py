@@ -5,6 +5,9 @@ import numpy as np
 import awkward as ak
 import torch.utils.data
 
+import tensorflow as tf
+
+
 from functools import partial
 from concurrent.futures.thread import ThreadPoolExecutor
 from tools import _pad, _repeat_pad, _clip, _stack
@@ -385,13 +388,33 @@ class SimpleIterDataset(torch.utils.data.IterableDataset):
                 return self._iters[worker_id]
 
 if __name__ == '__main__':
-    dataset = SimpleIterDataset(file_dict={'validation':glob.glob('C:/Users/andre/Desktop/UCSD/CSE145/cse145-particle-transformer/dataloading/JetClass_Pythia_val_5M/val_5M/*.root')}, data_config_file='dataconfig.yaml')
-    i = 0
+    """
+    After a lot of digging it looks like file_dict looks like this: {'name_of_section/particle': [list of file paths here to root files that are relevant]}
+    """
+
+    file_dict = {'validation':glob.glob('C:/Users/andre/Desktop/UCSD/CSE145/cse145-particle-transformer/dataloading/JetClass_Pythia_val_5M/val_5M/*.root')}
     
-    for test in dataset:
+    pytorch_dataloader = SimpleIterDataset(file_dict=file_dict, data_config_file='dataconfig.yaml')
+
+    def process_pytorch_data(data):
+        return ({datum: tf.convert_to_tensor(data[0][datum], dtype=tf.float32) for datum in data[0].keys()}, {'label': tf.constant(data[1]['_label_'], dtype=tf.int32)})
+    
+    tf_dataloader = tf.data.Dataset.from_generator(lambda: (process_pytorch_data(data) for data in pytorch_dataloader),output_signature = (
+        {
+            'pf_points': tf.TensorSpec(shape=(2, 128), dtype=tf.float32),
+            'pf_features': tf.TensorSpec(shape=(17, 128), dtype=tf.float32),
+            'pf_vectors': tf.TensorSpec(shape=(4, 128), dtype=tf.float32),
+            'pf_mask': tf.TensorSpec(shape=(1, 128), dtype=tf.float32)
+        },
+        {
+            'label': tf.TensorSpec(shape=(), dtype=tf.int32)
+        }
+    ))
+    
+    # Example of using the tf_dataloader, would mostly just be passed into model.fit though
+    i = 0
+    for t in tf_dataloader:
         if i == 10000:
             break
-        print(i, test[1])
-        i += 1
-    #for name in :
-    #    print( '\t', name)
+        print(t[1]['label'], t[1]['label'].numpy())
+        i+= 1
