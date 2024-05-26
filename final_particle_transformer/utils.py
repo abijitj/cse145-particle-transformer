@@ -1,5 +1,5 @@
 """
-Constains misc. functions like pairwise_lv_fts() 
+Contains misc. functions like pairwise_lv_fts() 
 PT file line 0 - 185
 """
 import math
