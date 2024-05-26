@@ -133,3 +133,4 @@ dmypy.json
 # Data directory
 /dataset
 .vscode
+/dataloading/JetClass_Pythia_val_5M
