@@ -8,6 +8,9 @@ import tensorflow as tf
 from tensorflow.keras.layers import Input, Dense, LayerNormalization, MultiHeadAttention, Dropout, Flatten
 from tensorflow.keras.models import Model
 import os
+pip! install keras
+from keras.layers import *
+from qkeras import *
 
 filepath = './retrain_test_1/JetClass/Pythia/test_20M/'
 x_particles = [] 
@@ -127,18 +130,51 @@ print("Interaction Matrix shape:", interaction_matrix.shape)
 particle_input = layers.Input(shape=(None, num_particle_features))  # Shape: (None, None, num_particle_features)
 interaction_input = layers.Input(shape=(None, None, num_interaction_features))  # Shape: (None, None, None, num_interaction_features)
 
-####### should we use quantlization here?
+####### should we use quantlization here? - yes
 # 3-layer MLP with (128, 512, 128) nodes each layer with GELU nonlinearity
-particle_embedding = Dense(128, activation='gelu')(particle_input)
-particle_embedding = Dense(512, activation='gelu')(particle_embedding)
-particle_embedding = Dense(d, activation='gelu')(particle_embedding)
+# particle_embedding = Dense(128, activation='gelu')(particle_input)
+# particle_embedding = Dense(512, activation='gelu')(particle_embedding)
+# particle_embedding = Dense(d, activation='gelu')(particle_embedding)
+# particle_embedding = LayerNormalization()(particle_embedding)
+#### compiler error!!!! not able to import qkeras
+particle_embedding = QDense(128,
+                            kernel_quantizer=quantized_bits(4),
+                            bias_quantizer=quantized_bits(4))(particle_input)
+particle_embedding = QActivation("gelu", name="gelu")(particle_embedding)
+particle_embedding = QDense(512,
+                            kernel_quantizer=quantized_bits(4),
+                            bias_quantizer=quantized_bits(4))(particle_embedding)
+particle_embedding = QActivation("gelu", name="gelu")(particle_embedding)
+particle_embedding = QDense(d,
+                            kernel_quantizer=quantized_bits(4),
+                            bias_quantizer=quantized_bits(4))(particle_embedding)
+particle_embedding = QActivation("gelu", name="gelu")(particle_embedding)
 particle_embedding = LayerNormalization()(particle_embedding)
 
 # using a 4-layer pointwise 1D convolution with (64, 64, 64, 8) channels with GELU nonlinearity and batch normalization in between to yield a d′ = 8 dimensional interaction matrix.
-interaction_embedding = tf.keras.layers.Conv1D(64, 1, activation='gelu')(interaction_input)
-interaction_embedding = tf.keras.layers.Conv1D(64, 1, activation='gelu')(interaction_embedding)
-interaction_embedding = tf.keras.layers.Conv1D(64, 1, activation='gelu')(interaction_embedding)
-interaction_embedding = tf.keras.layers.Conv1D(d_prime, 1, activation='gelu')(interaction_embedding)
+
+#### compiler error!!!! not able to import qkeras
+# interaction_embedding = tf.keras.layers.Conv1D(64, 1, activation='gelu')(interaction_input)
+# interaction_embedding = tf.keras.layers.Conv1D(64, 1, activation='gelu')(interaction_embedding)
+# interaction_embedding = tf.keras.layers.Conv1D(64, 1, activation='gelu')(interaction_embedding)
+# interaction_embedding = tf.keras.layers.Conv1D(d_prime, 1, activation='gelu')(interaction_embedding)
+# interaction_embedding = tf.keras.layers.BatchNormalization()(interaction_embedding)
+interaction_embedding = QConv1D(64, 1, 
+                                kernel_quantizer=quantized_bits(4),
+                                bias_quantizer=quantized_bits(4))(interaction_input)
+interaction_embedding = QActivation("gelu", name="gelu")(interaction_embedding)
+interaction_embedding = QConv1D(64, 1, 
+                                kernel_quantizer=quantized_bits(4),
+                                bias_quantizer=quantized_bits(4))(interaction_embedding)
+interaction_embedding = QActivation("gelu", name="gelu")(interaction_embedding)
+interaction_embedding = QConv1D(64, 1, 
+                                kernel_quantizer=quantized_bits(4),
+                                bias_quantizer=quantized_bits(4))(interaction_embedding)
+interaction_embedding = QActivation("gelu", name="gelu")(interaction_embedding)
+interaction_embedding = QConv1D(64, 1, 
+                                kernel_quantizer=quantized_bits(4),
+                                bias_quantizer=quantized_bits(4))(interaction_embedding)
+interaction_embedding = QActivation("gelu", name="gelu")(interaction_embedding)
 interaction_embedding = tf.keras.layers.BatchNormalization()(interaction_embedding)
 
 # num_attention_blocks = 8
