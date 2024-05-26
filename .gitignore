@@ -134,3 +134,4 @@ dmypy.json
 /dataset
 .vscode
 /dataloading/JetClass_Pythia_val_5M
+/final_particle_transformer/dataloading/JetClass_Pythia_val_5M
