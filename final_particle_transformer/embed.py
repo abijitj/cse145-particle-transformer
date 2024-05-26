@@ -70,7 +70,7 @@ class PairEmbed(tf.keras.Model):
                     input_dim = dim
                 if use_pre_activation_pair:
                     self.module_list = self.module_list[:-1]
-                self.embed = k.models.Sequential(self.module_list)
+                self.embed = self.module_list
 
             if pairwise_input_dim > 0:
                 input_dim = pairwise_input_dim
@@ -84,9 +84,15 @@ class PairEmbed(tf.keras.Model):
                     input_dim = dim
                 if use_pre_activation_pair:
                     self.fts_module_list = self.fts_module_list[:-1]
-                self.fts_embed = k.models.Sequential(self.fts_module_list)
+                self.fts_embed = self.fts_module_list
         else:
             raise RuntimeError('`mode` can only be `sum` or `concat`')
+    
+    def run_layer_list(self, layer_list, layer_input, training=True):
+        intermediate = layer_input
+        for layer in layer_list:
+            intermediate = layer(intermediate)
+        return intermediate
 
     def call(self, x, uu=None, training=False):
         assert (x is not None or uu is not None)
@@ -117,14 +123,14 @@ class PairEmbed(tf.keras.Model):
         
         if self.mode == 'concat':
             pair_fts = uu if x is None else (x if uu is None else tf.concat((x, uu), axis=1))
-            elements = self.embed(pair_fts, training=training)
+            elements = self.run_layer_list(self.embed, pair_fts, training=training)
         elif self.mode == 'sum':
             if x is None:
-                elements = self.fts_embed(uu, training=training)
+                elements = self.run_layer_list(self.fts_embed, uu, training=training)
             elif uu is None:
-                elements = self.embed(x, training=training)
+                elements = self.run_layer_list(self.embed, x, training=training)
             else:
-                elements = self.embed(x, training=training) + self.fts_embed(uu, training=training)
+                elements = self.run_layer_list(self.embed, x, training=training) + self.run_layer_list(self.fts_embed, uu, training=training)
 
         if self.is_symmetric and not self.for_onnx:
             y = tf.zeros((batch_size, self.out_dim, seq_len, seq_len), dtype=elements.dtype)
