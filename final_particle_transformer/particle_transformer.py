@@ -8,7 +8,6 @@ from .utils import build_sparse_tensor, trunc_normal_
 from .block import Block
 from .sequence_trimmer import SequenceTrimmer
 
-
 class ParticleTransformer(k.Model):
     def __init__(self,
                  input_dim,
