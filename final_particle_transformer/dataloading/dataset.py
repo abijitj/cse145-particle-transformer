@@ -387,10 +387,10 @@ class SimpleIterDataset(torch.utils.data.IterableDataset):
                 self._iters[worker_id] = _SimpleIter(**kwargs)
                 return self._iters[worker_id]
 
-if __name__ == '__main__':
-    """
-    After a lot of digging it looks like file_dict looks like this: {'name_of_section/particle': [list of file paths here to root files that are relevant]}
-    """
+"""if __name__ == '__main__':
+    
+    #After a lot of digging it looks like file_dict looks like this: {'name_of_section/particle': [list of file paths here to root files that are relevant]}
+    
 
     file_dict = {'validation':glob.glob('C:/Users/andre/Desktop/UCSD/CSE145/cse145-particle-transformer/dataloading/JetClass_Pythia_val_5M/val_5M/*.root')}
     
@@ -417,4 +417,24 @@ if __name__ == '__main__':
         if i == 10000:
             break
         print(t[1]['label'], t[1]['label'].numpy())
-        i+= 1
+        i+= 1"""
+
+def create_tf_dataloader(file_dict, data_config_file):
+    pytorch_dataloader = SimpleIterDataset(file_dict=file_dict, data_config_file=data_config_file)
+
+    def process_pytorch_data(data):
+        return ({datum: tf.convert_to_tensor(data[0][datum], dtype=tf.float32) for datum in data[0].keys()}, {'label': tf.constant(data[1]['_label_'], dtype=tf.int32)})
+    
+    tf_dataloader = tf.data.Dataset.from_generator(lambda: (process_pytorch_data(data) for data in pytorch_dataloader),output_signature = (
+        {
+            'pf_points': tf.TensorSpec(shape=(2, 128), dtype=tf.float32),
+            'pf_features': tf.TensorSpec(shape=(17, 128), dtype=tf.float32),
+            'pf_vectors': tf.TensorSpec(shape=(4, 128), dtype=tf.float32),
+            'pf_mask': tf.TensorSpec(shape=(1, 128), dtype=tf.float32)
+        },
+        {
+            'label': tf.TensorSpec(shape=(), dtype=tf.int32)
+        }
+    ))
+
+    return tf_dataloader
