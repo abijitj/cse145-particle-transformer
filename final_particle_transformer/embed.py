@@ -21,13 +21,15 @@ class Embed(k.Model):
                 self.module_list.append(k.layers.Activation('relu'))
             input_dim = dim
 
-        self.embed = k.models.Sequential(self.module_list)
+        self.embed = self.module_list
 
     def call(self, x, training=False):
         if self.input_bn is not None:
             x = self.input_bn(x, training=training)
             x = tf.transpose(x, perm=[2, 0, 1])  # equivalent to x.permute(2, 0, 1).contiguous()
-        return self.embed(x)
+            for layer in self.embed:
+                x = layer(x)
+        return x
 
 class PairEmbed(tf.keras.Model):
     def __init__(self, pairwise_lv_dim, pairwise_input_dim, dims, remove_self_pair=False, 
