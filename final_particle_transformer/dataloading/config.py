@@ -2,7 +2,7 @@ import numpy as np
 import yaml
 import copy
 
-from tools import _get_variable_names
+from .tools import _get_variable_names
 
 
 def _as_list(x):

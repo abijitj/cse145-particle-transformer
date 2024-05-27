@@ -10,10 +10,10 @@ import tensorflow as tf
 
 from functools import partial
 from concurrent.futures.thread import ThreadPoolExecutor
-from tools import _pad, _repeat_pad, _clip, _stack
-from fileio import _read_files
-from config import DataConfig, _md5
-from preprocess import _apply_selection, _build_new_variables, _build_weights, AutoStandardizer, WeightMaker
+from .tools import _pad, _repeat_pad, _clip, _stack
+from .fileio import _read_files
+from .config import DataConfig, _md5
+from .preprocess import _apply_selection, _build_new_variables, _build_weights, AutoStandardizer, WeightMaker
 
 import glob
 

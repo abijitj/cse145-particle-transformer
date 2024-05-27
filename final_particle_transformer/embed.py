@@ -4,7 +4,7 @@ Contains Embed and PairEmbed classes for embedding particles and pairs of partic
 
 import tensorflow as tf
 import keras as k
-from .utils import pairwise_lv_fts
+from utils import pairwise_lv_fts
 
 class Embed(k.Model):
     def __init__(self, input_dim, dims, normalize_input=True, activation='gelu'):

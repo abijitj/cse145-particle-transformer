@@ -4,9 +4,9 @@ import copy
 import numpy as np
 import awkward as ak
 
-from tools import _get_variable_names, _eval_expr
-from fileio import _read_files
-from config import DataConfig
+from .tools import _get_variable_names, _eval_expr
+from .fileio import _read_files
+from .config import DataConfig
 
 
 def _apply_selection(table, selection, funcs=None):

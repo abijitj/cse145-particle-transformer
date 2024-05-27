@@ -2,7 +2,7 @@ import math
 import awkward as ak
 import tqdm
 import traceback
-from tools import _concat
+from .tools import _concat
 
 
 def _read_hdf5(filepath, branches, load_range=None):
