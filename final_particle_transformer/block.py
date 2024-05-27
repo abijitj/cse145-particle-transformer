@@ -17,9 +17,9 @@ class Block(k.Model):
         
         self.pre_attn_norm = k.layers.LayerNormalization()
         self.attn = MultiHeadAttention(num_heads=num_heads, 
-                                       head_size=embed_dim, 
-                                       dropout=attn_dropout,
-                                       use_bias=add_bias_kv)
+                                       head_size=embed_dim,
+                                       n_embd=self.embed_dim,
+                                       dropout=attn_dropout)
         
         self.post_attn_norm = k.layers.LayerNormalization() if scale_attn else None
         self.dropout = k.layers.Dropout(dropout)
