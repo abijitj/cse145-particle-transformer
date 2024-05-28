@@ -75,10 +75,17 @@ class ParticleTransformer(k.Model):
         trunc_normal_(self.cls_token, std=0.02)
     
     def call(self, x, v=None, mask=None, uu=None, uu_idx=None, training=False):
+        # x: (N, C, P)
+        # v: (N, 4, P) [px,py,pz,energy]
+        # mask: (N, 1, P) -- real particle = 1, padded = 0
+        # for pytorch: uu (N, C', num_pairs), uu_idx (N, 2, num_pairs)
+        # for onnx: uu (N, C', P, P), uu_idx=None
+        #print(x.shape) 
+
         if not self.for_inference:
             if uu_idx is not None:
                 uu = build_sparse_tensor(uu, uu_idx, tf.shape(x)[-1])
-            x, v, mask, uu = self.trimmer(x, v, mask, uu)
+            x, v, mask, uu = self.trimmer(x, v=v, mask=mask, uu=uu)
             padding_mask = tf.logical_not(tf.squeeze(mask, axis=1))  # assuming mask is of shape (N, 1, P)
         
         # TODO: mixed precision not added yet

@@ -25,10 +25,12 @@ class Embed(k.Model):
 
     def call(self, x, training=False):
         if self.input_bn is not None:
+            # x: (batch, embed_dim, seq_len)
             x = self.input_bn(x, training=training)
             x = tf.transpose(x, perm=[2, 0, 1])  # equivalent to x.permute(2, 0, 1).contiguous()
             for layer in self.embed:
                 x = layer(x)
+        # x: (seq_len, batch, embed_dim)
         return x
 
 class PairEmbed(tf.keras.Model):

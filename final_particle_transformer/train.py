@@ -4,6 +4,9 @@ import tensorflow as tf
 import keras as k
 from tqdm import tqdm
 from particle_transformer import ParticleTransformer
+from particle_transformer_tagger import ParticleTransformerTagger
+from embed import Embed 
+
 from dataloading.dataset import create_tf_dataloader
 import os
 
@@ -22,14 +25,27 @@ steps_per_epoch = 1000
 validation_split = 0.2
 
 #print('cwd\n\n',os.getcwd())
-file_dict = {'validation':glob('C:/Users/andre/Desktop/UCSD/CSE145/cse145-particle-transformer/dataloading/JetClass_Pythia_val_5M/val_5M/*.root')}
+#file_dict = {'validation':glob('C:/Users/andre/Desktop/UCSD/CSE145/cse145-particle-transformer/dataloading/JetClass_Pythia_val_5M/val_5M/*.root')}
+file_dict = {'validation': glob('C:/Users/Abiji/Documents/ABClasses/CSE145/cse145-particle-transformer/final_particle_transformer/dataloading/JetClass_Pythia_val_5M/val_5M/*.root')}
 data_config_file = './dataloading/dataconfig.yaml'
 dataloader = create_tf_dataloader(file_dict, data_config_file)
-for test in dataloader:
-    print(test)
+
+# for test in dataloader:
+#     print("THIS IS THE DATALOADER!!!")
+#     print(len(test)) # 2
+#     print("something1", test[0].shape, test[1].shape) # (2, 128), ()
+#     break
+
+train_dataset = dataloader.batch(batch_size) 
+for test in train_dataset:
+    print("THIS IS THE TRAIN DATASET!!!")
+    print(len(test)) # 2
+    print("something2", test[0].shape, test[1].shape) # (batch_size, 2, 128), (batch_size, )
     break
 
-"""model = ParticleTransformer(((1,2,128)))
+model = ParticleTransformer((2, 128), num_classes=10)
+# model = ParticleTransformerTagger((1, 2, 128), )
+# model = Embed([2, 128], [128, 512, 128], activation='gelu')
 
 with tf.device(device):
     loss_function = k.losses.SparseCategoricalCrossentropy(from_logits=True)
@@ -40,4 +56,5 @@ with tf.device(device):
     #validation_split=validation_split, validation_batch_size=batch_size, validation_steps=20
     #TODO validation data shouldn't be the same as training data
     
-    model.fit(dataloader, epochs=epochs, batch_size=batch_size, steps_per_epoch=steps_per_epoch, validation_data=dataloader)"""
+    model.fit(train_dataset, epochs=epochs, batch_size=batch_size, steps_per_epoch=steps_per_epoch)
+    # model.fit(train_dataset, epochs=epochs, batch_size=batch_size, steps_per_epoch=steps_per_epoch, validation_data=train_dataset)

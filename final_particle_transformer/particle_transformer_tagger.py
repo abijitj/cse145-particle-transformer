@@ -6,11 +6,11 @@ ParticleTransformerTaggerWithExtraFeatures
 import tensorflow as tf
 import keras as k
 import copy
-from .embed import Embed, PairEmbed
-from .utils import build_sparse_tensor, trunc_normal_
-from .block import Block
-from .sequence_trimmer import SequenceTrimmer
-from .particle_transformer import ParticleTransformer
+from embed import Embed, PairEmbed
+from utils import build_sparse_tensor, trunc_normal_
+from block import Block
+from sequence_trimmer import SequenceTrimmer
+from particle_transformer import ParticleTransformer
 
 
 class ParticleTransformerTagger(k.Model):
