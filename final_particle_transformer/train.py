@@ -37,7 +37,7 @@ dataloader = create_tf_dataloader(file_dict, data_config_file)
 #     break
 
 train_dataset = dataloader.batch(batch_size) 
-for test in train_dataset:
+for test in train_dataset:  
     print("THIS IS THE TRAIN DATASET!!!")
     print(len(test)) # 2
     print("something2", test[0].shape, test[1].shape) # (batch_size, 2, 128), (batch_size, )

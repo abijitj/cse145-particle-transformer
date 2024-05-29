@@ -4,6 +4,7 @@ import numpy as np
 import tensorflow as tf
 import keras
 from qkeras import QDense
+import sys
 
 class Head(keras.Model):
     """A single head of attention"""
@@ -20,13 +21,14 @@ class Head(keras.Model):
 
     def call(self, q, k):
         # B, T, C = x.shape
-        B, T, C = q.shape
+        #B, T, C = q.shape
+
         K = self.key(k) # (B, T, C)
         #print(K.shape, x.shape, 'K')
         Q = self.query(q) # (B, T, C)
 
         # compute attention scores ("affinities")
-        wei = Q @ self.transpose(K) * C**-0.5 # (B, T, C)
+        wei = Q @ self.transpose(K) * q.shape[-1]**-0.5 # (B, T, C)
         #tf.
         #wei = wei.masked_fill(self.tril[:T, :T] == 0, float('-inf')) # (B, T, T)
         tril = tf.convert_to_tensor(np.tril(np.ones((T, T), dtype='float_'), 0), dtype=tf.float32)
@@ -49,6 +51,8 @@ class MultiHeadAttention(keras.Model):
         self.dropout = keras.layers.Dropout(dropout)
 
     def call(self, q, k):
+        # tf.print("MultiHeadAttention call:", tf.shape(q)[0], tf.shape(q)[1], tf.shape(q)[2], 
+        # tf.shape(k)[0],tf.shape(k)[1], tf.shape(k)[2], output_stream=sys.stdout) 
         out = keras.layers.concatenate([h(q, k) for h in self.heads], axis=-1)
         out = self.dropout(self.proj(out))
         return out

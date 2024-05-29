@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf 
 import keras as k 
 from multi_head_attention import MultiHeadAttention
+import sys
 
 class Block(k.Model):
     """ Block for Particle Transformer (both Particle Attention and Class Attention) """
@@ -46,6 +47,7 @@ class Block(k.Model):
         Returns:
             encoded output of shape `(seq_len, batch, embed_dim)`
         """
+        # tf.print("Block call:", tf.shape(x)[0], tf.shape(x)[1], tf.shape(x)[2], output_stream=sys.stdout) 
         if x_cls is not None:
             # prepend one element for x_cls: -> (batch, 1+seq_len)
             padding_mask = tf.concat([tf.zeros_like(padding_mask[:, :1]), padding_mask], axis=1)

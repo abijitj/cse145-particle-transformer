@@ -7,6 +7,7 @@ from embed import Embed, PairEmbed
 from utils import build_sparse_tensor, trunc_normal_
 from block import Block
 from sequence_trimmer import SequenceTrimmer
+import sys 
 
 class ParticleTransformer(k.Model):
     def __init__(self,
@@ -80,7 +81,11 @@ class ParticleTransformer(k.Model):
         # mask: (N, 1, P) -- real particle = 1, padded = 0
         # for pytorch: uu (N, C', num_pairs), uu_idx (N, 2, num_pairs)
         # for onnx: uu (N, C', P, P), uu_idx=None
-        #print(x.shape) 
+        
+        tf.print('ParticleTransformer', x)
+        # print("hello", tf.shape(x)[0])
+        #tf.print("Hello", output_stream=sys.stdout)
+        #tf.print("ParticleTransformer call:", tf.shape(x)[0], tf.shape(x)[1], tf.shape(x)[2], output_stream=sys.stdout) 
 
         if not self.for_inference:
             if uu_idx is not None:
