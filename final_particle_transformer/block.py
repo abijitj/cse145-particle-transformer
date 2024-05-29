@@ -62,7 +62,9 @@ class Block(k.Model):
             x = x[:1]  # Extract the class token part
         else:
             residual = x
+            # print("Before Pre-attention Norm", x.shape)
             x = self.pre_attn_norm(x)
+            print("After Pre-Attention Norm", x.shape)  
             x = self.attn(x, x)
         
         if self.c_attn is not None:

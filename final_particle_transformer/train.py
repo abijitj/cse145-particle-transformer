@@ -43,7 +43,7 @@ for test in train_dataset:
     print("something2", test[0].shape, test[1].shape) # (batch_size, 2, 128), (batch_size, )
     break
 
-model = ParticleTransformer((2, 128), num_classes=10)
+model = ParticleTransformer((128, 2), num_classes=10)
 # model = ParticleTransformerTagger((1, 2, 128), )
 # model = Embed([2, 128], [128, 512, 128], activation='gelu')
 

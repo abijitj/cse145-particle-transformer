@@ -74,32 +74,46 @@ class ParticleTransformer(k.Model):
         
         self.cls_token = self.add_weight(shape=(1, 1, embed_dim), initializer='random_normal', trainable=True)
         trunc_normal_(self.cls_token, std=0.02)
+
+        #self.mask_transpose = k.layers.Permute((2, 0, 1))
     
     def call(self, x, v=None, mask=None, uu=None, uu_idx=None, training=False):
-        # x: (N, C, P)
+        # x: (N, C, P) - (batch_size, # channels = # features = 128, 2)
         # v: (N, 4, P) [px,py,pz,energy]
         # mask: (N, 1, P) -- real particle = 1, padded = 0
         # for pytorch: uu (N, C', num_pairs), uu_idx (N, 2, num_pairs)
         # for onnx: uu (N, C', P, P), uu_idx=None
         
-        tf.print('ParticleTransformer', x)
-        # print("hello", tf.shape(x)[0])
-        #tf.print("Hello", output_stream=sys.stdout)
-        #tf.print("ParticleTransformer call:", tf.shape(x)[0], tf.shape(x)[1], tf.shape(x)[2], output_stream=sys.stdout) 
+        # if mask is not None: 
+        #     print("mask is not None:", mask.shape)
+        # else: 
+        #     print("mask is None")
 
         if not self.for_inference:
+            #print("testing1...")
             if uu_idx is not None:
                 uu = build_sparse_tensor(uu, uu_idx, tf.shape(x)[-1])
+            
+            print("Before sequence trimmer x.shape:", x.shape)
+            print("Before sequence trimmer mask.shape:", mask.shape if mask is not None else "Mask is None")
+
             x, v, mask, uu = self.trimmer(x, v=v, mask=mask, uu=uu)
+
+            print("After sequence trimmer x.shape:", x.shape)
+            print("After sequence trimmer mask.shape:", mask.shape if mask is not None else "Mask is None")
+
             padding_mask = tf.logical_not(tf.squeeze(mask, axis=1))  # assuming mask is of shape (N, 1, P)
         
         # TODO: mixed precision not added yet
         # with torch.cuda.amp.autocast(enabled=self.use_amp):
 
         # input embedding
+        # print("Before embed", x.shape)
         x = self.embed(x)
-        if mask is not None:
-            x = tf.where(tf.expand_dims(mask, axis=-1), x, tf.zeros_like(x))
+        mask_permute = tf.transpose(~mask, perm=(2,0,1))
+        x = tf.where(mask_permute, x, 0) 
+        print("After embed", x.shape)
+
         attn_mask = None
         if (v is not None or uu is not None) and self.pair_embed is not None:
             attn_mask = self.pair_embed(v, uu)

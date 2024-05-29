@@ -20,25 +20,29 @@ class Head(keras.Model):
         self.dropout = keras.layers.Dropout(dropout)
 
     def call(self, q, k):
-        # B, T, C = x.shape
-        #B, T, C = q.shape
-
-        K = self.key(k) # (B, T, C)
-        #print(K.shape, x.shape, 'K')
-        Q = self.query(q) # (B, T, C)
-
+        """
+        Inputs: 
+            q: (T, B, C)
+            k: (T, B, C)
+        
+        Returns: 
+            out: ...
+        """
+        # (T, B, C) = (# of particles, batch_size, # features)
+        K = self.key(k) # (T, B, C)
+        Q = self.query(q) # (T, B, C)
+        
+        T = k.shape[0]
         # compute attention scores ("affinities")
-        wei = Q @ self.transpose(K) * q.shape[-1]**-0.5 # (B, T, C)
-        #tf.
-        #wei = wei.masked_fill(self.tril[:T, :T] == 0, float('-inf')) # (B, T, T)
+        wei = Q @ self.transpose(K) * q.shape[-1]**-0.5 # (B, T, C) - false
         tril = tf.convert_to_tensor(np.tril(np.ones((T, T), dtype='float_'), 0), dtype=tf.float32)
         ninf = tf.constant(float('-inf'), dtype=tf.float32)
-        wei = tf.where(tril[:T, :T] == 0, ninf, wei) # (B, T, T)
-        wei = keras.activations.softmax(wei) # (B, T, T)
+        wei = tf.where(tril[:T, :T] == 0, ninf, wei) # (B, T, T) - false
+        wei = keras.activations.softmax(wei) # (B, T, T) - false
         wei = self.dropout(wei)
         # perform weighted aggregation of the values
         v = self.value(k)
-        out = wei @ v # (B, T, T) @ (B, T, C) -> (B, T, C)
+        out = wei @ v # (B, T, T) @ (B, T, C) -> (B, T, C) - false
         return out 
 
 
@@ -51,8 +55,6 @@ class MultiHeadAttention(keras.Model):
         self.dropout = keras.layers.Dropout(dropout)
 
     def call(self, q, k):
-        # tf.print("MultiHeadAttention call:", tf.shape(q)[0], tf.shape(q)[1], tf.shape(q)[2], 
-        # tf.shape(k)[0],tf.shape(k)[1], tf.shape(k)[2], output_stream=sys.stdout) 
         out = keras.layers.concatenate([h(q, k) for h in self.heads], axis=-1)
         out = self.dropout(self.proj(out))
         return out

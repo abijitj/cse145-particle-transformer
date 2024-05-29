@@ -99,6 +99,8 @@ class PairEmbed(tf.keras.Model):
         return intermediate
 
     def call(self, x, uu=None, training=False):
+        # x: (batch, v_dim, seq_len)
+        # uu: (batch, v_dim, seq_len, seq_len)
         assert (x is not None or uu is not None)
 
         if x is not None:
