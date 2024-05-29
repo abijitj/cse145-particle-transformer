@@ -47,6 +47,8 @@ class Block(k.Model):
         Returns:
             encoded output of shape `(seq_len, batch, embed_dim)`
         """
+        # print("Calling block:", x.shape, x_cls.shape if x_cls is not None else "x_cls is None")
+
         # tf.print("Block call:", tf.shape(x)[0], tf.shape(x)[1], tf.shape(x)[2], output_stream=sys.stdout) 
         if x_cls is not None:
             # prepend one element for x_cls: -> (batch, 1+seq_len)
@@ -55,6 +57,7 @@ class Block(k.Model):
             # class attention: https://arxiv.org/pdf/2103.17239.pdf
             residual = x_cls
             u = tf.concat([x_cls, x], axis=0) # (seq_len+1, batch, embed_dim)
+            print("Got past concat...")
             u = self.pre_attn_norm(u)   
 
             # (1, batch, embed_dim)
@@ -64,7 +67,7 @@ class Block(k.Model):
             residual = x
             # print("Before Pre-attention Norm", x.shape)
             x = self.pre_attn_norm(x)
-            print("After Pre-Attention Norm", x.shape)  
+            # print("After Pre-Attention Norm", x.shape)  
             x = self.attn(x, x)
         
         if self.c_attn is not None:
@@ -83,10 +86,12 @@ class Block(k.Model):
         x = self.act_dropout(x)
         if self.post_fc_norm is not None:
             x = self.post_fc_norm(x)
+        print("1:", x.shape)    
         x = self.fc2(x)
         x = self.dropout(x)
         if self.w_resid is not None:
             residual = tf.multiply(self.w_resid, residual)
         x += residual
         
+        print("2:", x.shape)
         return x

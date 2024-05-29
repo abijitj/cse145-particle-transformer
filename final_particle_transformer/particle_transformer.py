@@ -9,6 +9,8 @@ from block import Block
 from sequence_trimmer import SequenceTrimmer
 import sys 
 
+# batch_size = 256
+
 class ParticleTransformer(k.Model):
     def __init__(self,
                  input_dim,
@@ -78,29 +80,26 @@ class ParticleTransformer(k.Model):
         #self.mask_transpose = k.layers.Permute((2, 0, 1))
     
     def call(self, x, v=None, mask=None, uu=None, uu_idx=None, training=False):
-        # x: (N, C, P) - (batch_size, # channels = # features = 128, 2)
-        # v: (N, 4, P) [px,py,pz,energy]
-        # mask: (N, 1, P) -- real particle = 1, padded = 0
-        # for pytorch: uu (N, C', num_pairs), uu_idx (N, 2, num_pairs)
-        # for onnx: uu (N, C', P, P), uu_idx=None
-        
-        # if mask is not None: 
-        #     print("mask is not None:", mask.shape)
-        # else: 
-        #     print("mask is None")
+        """
+            x: (N, C, P) - (batch_size, # channels = # features = 128, 2)
+            v: (N, 4, P) [px,py,pz,energy]
+            mask: (N, 1, P) -- real particle = 1, padded = 0
+            for pytorch: uu (N, C', num_pairs), uu_idx (N, 2, num_pairs)
+            for onnx: uu (N, C', P, P), uu_idx=None
+        """
 
         if not self.for_inference:
             #print("testing1...")
             if uu_idx is not None:
                 uu = build_sparse_tensor(uu, uu_idx, tf.shape(x)[-1])
             
-            print("Before sequence trimmer x.shape:", x.shape)
-            print("Before sequence trimmer mask.shape:", mask.shape if mask is not None else "Mask is None")
+            # print("Before sequence trimmer x.shape:", x.shape)
+            # print("Before sequence trimmer mask.shape:", mask.shape if mask is not None else "Mask is None")
 
             x, v, mask, uu = self.trimmer(x, v=v, mask=mask, uu=uu)
 
-            print("After sequence trimmer x.shape:", x.shape)
-            print("After sequence trimmer mask.shape:", mask.shape if mask is not None else "Mask is None")
+            # print("After sequence trimmer x.shape:", x.shape)
+            # print("After sequence trimmer mask.shape:", mask.shape if mask is not None else "Mask is None")
 
             padding_mask = tf.logical_not(tf.squeeze(mask, axis=1))  # assuming mask is of shape (N, 1, P)
         
@@ -112,7 +111,7 @@ class ParticleTransformer(k.Model):
         x = self.embed(x)
         mask_permute = tf.transpose(~mask, perm=(2,0,1))
         x = tf.where(mask_permute, x, 0) 
-        print("After embed", x.shape)
+        # print("After embed", x.shape) # (P, N, C) 
 
         attn_mask = None
         if (v is not None or uu is not None) and self.pair_embed is not None:
@@ -120,12 +119,19 @@ class ParticleTransformer(k.Model):
             attn_mask = tf.reshape(attn_mask, (-1, tf.shape(v)[-1], tf.shape(v)[-1]))
         
         # transform
-        for block in self.blocks:
+        for i, block in enumerate(self.blocks):
+            print(f"Calling particle attention block...{i}", x.shape)
             x = block(x, x_cls=None, padding_mask=padding_mask, attn_mask=attn_mask)
+            print(f"After calling particle attention block...{i}", x.shape)
         
         # extract class token 
-        cls_tokens = tf.tile(self.cls_token, [tf.shape(x)[0], 1, 1]) #TODO: double-check this
-        for block in self.cls_blocks:
+        # cls_tokens = tf.tile(self.cls_token, [1, tf.shape(x)[1], -1]) 
+        print("Pre-broadcast: ", self.cls_token.shape)
+        batch_size = tf.shape(x)[1]
+        cls_tokens = tf.broadcast_to(self.cls_token, [1, batch_size, self.cls_token.shape[-1]]) #(1, N, C)
+        print("Post-broadcast: ", cls_tokens.shape)
+        for i, block in enumerate(self.cls_blocks):
+            print(f"Calling class attention block...{i}", x.shape, cls_tokens.shape)
             cls_tokens = block(x, x_cls=cls_tokens, padding_mask=padding_mask)
         
         x_cls = tf.squeeze(self.norm(cls_tokens))
