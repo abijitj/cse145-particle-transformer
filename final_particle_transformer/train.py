@@ -70,7 +70,7 @@ try:
         )
         #TODO validation data shouldn't be the same as training data
         
-        model.fit(train_dataset, epochs=epochs, batch_size=batch_size, steps_per_epoch=steps_per_epoch, validation_data=validation_dataset, validation_steps=10)
+        model.fit(train_dataset, epochs=epochs, batch_size=batch_size, steps_per_epoch=steps_per_epoch, validation_data=validation_dataset, validation_steps=10, verbose=1)
         exit()
         # model.fit(train_dataset, epochs=epochs, batch_size=batch_size, steps_per_epoch=steps_per_epoch, validation_data=train_dataset)
 except Exception as e:
