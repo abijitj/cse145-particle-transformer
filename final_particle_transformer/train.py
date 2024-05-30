@@ -73,5 +73,6 @@ try:
         # model.fit(train_dataset, epochs=epochs, batch_size=batch_size, steps_per_epoch=steps_per_epoch, validation_data=train_dataset)
 except Exception as e:
     log_file = open('./error.log', 'w')
+    log_file.truncate(0)
     log_file.write(str(e))
     log_file.close()
