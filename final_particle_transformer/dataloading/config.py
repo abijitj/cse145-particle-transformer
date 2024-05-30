@@ -52,8 +52,8 @@ class DataConfig(object):
                     opts[k] = v
         # only information in ``self.options'' will be persisted when exporting to YAML
         self.options = opts
-        if print_info:
-            print(opts)
+        #if print_info:
+        #    print(opts)
 
         self.train_load_branches = set()
         self.train_aux_branches = set()
@@ -157,7 +157,7 @@ class DataConfig(object):
             _log('test_time_selection: %s', str(self.test_time_selection))
             _log('var_funcs:\n - %s', '\n - '.join(str(it) for it in self.var_funcs.items()))
             _log('input_names: %s', str(self.input_names))
-            _log('input_dicts:\n - %s', '\n - '.join(str(it) for it in self.input_dicts.items()))
+            #_log('input_dicts:\n - %s', '\n - '.join(str(it) for it in self.input_dicts.items()))
             _log('input_shapes:\n - %s', '\n - '.join(str(it) for it in self.input_shapes.items()))
             _log('preprocess_params:\n - %s', '\n - '.join(str(it) for it in self.preprocess_params.items()))
             _log('label_names: %s', str(self.label_names))
