@@ -154,6 +154,7 @@ class _SimpleIter(object):
                 new_file_dict[name] = new_files
             file_dict = new_file_dict
         self.worker_file_dict = file_dict
+        print('File dict:', file_dict)
         self.worker_filelist = sum(file_dict.values(), [])
         self.worker_info = worker_info
         self.restart()
