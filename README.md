@@ -17,7 +17,19 @@ Running large machine learning models on the edge at the Large Hadron Collider i
 ### Dataset 
 We have a large particle jets dataset used for training and testing by downloading from [website](https://zenodo.org/records/6619768), it is a large dataset with more than 200GB Jets data.
 
+### Reference Models Used
+[Partile Transformer](https://github.com/jet-universe/particle_transformer)
+[weaver-core](https://github.com/hqucms/weaver-core)
+[Nano-GPT](https://github.com/karpathy/nanoGPT)
+
 ### Methods
+
+#### 1. Retrain the model
+In this section, we download the large particle jets dataset to train the P article Transformer model that was implemented using PyTorch...
+
+#### 2. Practice translation from PyTorch to TensorFlow
+In this section, we trying to get familiar with the transformer model, so we reimplement a transformer called nanoGPT that is 
+
 
 #### Retain model records
  - Result 1 - final ACC = 0.834:
