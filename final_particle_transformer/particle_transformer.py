@@ -126,13 +126,15 @@ class ParticleTransformer(k.Model):
         
         # extract class token 
         # cls_tokens = tf.tile(self.cls_token, [1, tf.shape(x)[1], -1]) 
-        print("Pre-broadcast: ", self.cls_token.shape)
+        # print("Pre-broadcast: ", self.cls_token.shape)
         batch_size = tf.shape(x)[1]
         cls_tokens = tf.broadcast_to(self.cls_token, [1, batch_size, self.cls_token.shape[-1]]) #(1, N, C)
-        print("Post-broadcast: ", cls_tokens.shape)
+        # print("Post-broadcast: ", cls_tokens.shape)
         for i, block in enumerate(self.cls_blocks):
             print(f"Calling class attention block...{i}", x.shape, cls_tokens.shape)
             cls_tokens = block(x, x_cls=cls_tokens, padding_mask=padding_mask)
+            print(f"After calling class attention block...{i}", x.shape, cls_tokens.shape)
+
         
         x_cls = tf.squeeze(self.norm(cls_tokens))
         
