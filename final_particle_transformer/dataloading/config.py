@@ -28,7 +28,7 @@ class DataConfig(object):
     r"""Data loading configuration.
     """
 
-    def __init__(self, print_info=True, **kwargs):
+    def __init__(self, print_info=False, **kwargs):
 
         opts = {
             'treename': None,
