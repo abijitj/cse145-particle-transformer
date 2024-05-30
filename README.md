@@ -15,7 +15,7 @@ Running large machine learning models on the edge at the Large Hadron Collider i
 ## Technical Materials
 
 ### Dataset 
-We have a large particle jets dataset used for training and testing by downloading from [website](https://zenodo.org/records/6619768), it is more than 200GB dataset.
+We have a large particle jets dataset used for training and testing by downloading from [website](https://zenodo.org/records/6619768), it is a large dataset with more than 200GB Jets data.
 
 ### Methods
 
