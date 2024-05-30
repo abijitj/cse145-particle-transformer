@@ -422,7 +422,7 @@ class SimpleIterDataset(torch.utils.data.IterableDataset):
         i+= 1"""
 
 def create_tf_dataloader(file_dict, data_config_file):
-    print(file_dict, data_config_file)
+    #print(file_dict, data_config_file)
     pytorch_dataloader = SimpleIterDataset(file_dict=file_dict, data_config_file=data_config_file)
 
     #def process_pytorch_data(data):
