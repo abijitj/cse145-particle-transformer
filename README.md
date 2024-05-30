@@ -1,8 +1,25 @@
 # Quantized Particle Transformer
 
+## Overview
 This repo contains a project that is working towards building a quantized and more efficient version of the Particle Transformer (ParT) machine learning model described in this [paper](https://arxiv.org/abs/2202.03772) and its associated [repo](https://github.com/jet-universe/particle_transformer). 
 
-# Retain model records
+## Team Members
+ - Abijit Jayachandran [ajayachandran@ucsd.edu](ajayachandran@ucsd.edu)
+ - Andrew Masek [amasek@ucsd.edu](amasek@ucsd.edu)
+ - Juan Yin [j9yin@ucsd.edu](j9yin@ucsd.edu)
+
+##  Abstract & Introduction
+Running large machine learning models on the edge at the Large Hadron Collider is a challenging task because of the limited computing available and the time constraints. Existing models are often too large and therefore take a lot of memory to process and time to process the data. One method to get around this problem is to quantize existing models and use FPGAs (as opposed to general-purpose GPUs) for faster and more specialized processing. Our project aims to quantize an existing Particle Transformer model from PyTorch to QKeras. This new quantized model can then be implemented on an FPGA using the DeepSoCFlow library. We hope to maintain similar accuracy levels but achieve faster inference time. 
+
+
+## Technical Materials
+
+### Dataset 
+We have a large particle jets dataset used for training and testing by downloading from [website](https://zenodo.org/records/6619768), it is a large dataset with more than 200GB Jets data.
+
+### Methods
+
+#### Retain model records
  - Result 1 - final ACC = 0.834:
    epoch = 2
    ![image](https://github.com/abijitj/cse145-particle-transformer/assets/79886525/1ff3ad89-5ea9-44ce-849b-adb590289140)
@@ -17,10 +34,15 @@ This repo contains a project that is working towards building a quantized and mo
    <img width="731" alt="截屏2024-04-27 19 43 21" src="https://github.com/abijitj/cse145-particle-transformer/assets/79886525/e6e00183-33e8-4739-b8c0-40924f4aefb1">
 
 
-# Pytorch to Keras and QKeras translation
+#### Pytorch to Keras and QKeras translation
  - [nanoPGT translation](https://github.com/abijitj/nanoGPT)
  - [bigram translation](https://github.com/JuanYin1/smallGPT_keras)
  - [Pytorch nanoGPT & bigram model](https://github.com/portoaj/NanoGPT-Fork)
+
+
+## REFERENCES
+- [Quantization helps reduce MAC](https://arxiv.org/pdf/2106.08295)
+- 
 
    
 
