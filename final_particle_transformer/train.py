@@ -36,6 +36,7 @@ validation_file_dict = {'validation': glob('/home/particle/particle_transformer/
 #file_dict = {'validation': glob('C:/Users/Abiji/Documents/ABClasses/CSE145/cse145-particle-transformer/final_particle_transformer/dataloading/JetClass_Pythia_val_5M/val_5M/*.root')}
 data_config_file = './dataloading/dataconfig.yaml'
 train_dataloader = create_tf_dataloader(train_file_dict, data_config_file)
+validation_dataloader = create_tf_dataloader(validation_file_dict, data_config_file)
 
 for test in train_dataloader:
     print("THIS IS THE DATALOADER!!!")
@@ -43,7 +44,9 @@ for test in train_dataloader:
     print("something1", test[0].shape, test[1].shape) # (2, 128), ()
     break
 
-train_dataset = train_dataloader.batch(batch_size) 
+train_dataset = train_dataloader.batch(batch_size)
+validation_dataset = validation_dataloader.batch(batch_size)
+
 #for test in train_dataset:  
 #    print("THIS IS THE TRAIN DATASET!!!")
 #    print(len(test)) # 2
@@ -59,10 +62,11 @@ with tf.device(device):
     loss_function = k.losses.SparseCategoricalCrossentropy(from_logits=True)
     model.compile(
         optimizer=k.optimizers.Adam(learning_rate=learning_rate),
-        loss=loss_function
+        loss=loss_function,
+        metrics=['val_loss', 'val_accuracy']
     )
     #validation_split=validation_split, validation_batch_size=batch_size, validation_steps=20
     #TODO validation data shouldn't be the same as training data
     
-    model.fit(train_dataset, epochs=epochs, batch_size=batch_size, steps_per_epoch=steps_per_epoch)
+    model.fit(train_dataset, epochs=epochs, batch_size=batch_size, steps_per_epoch=steps_per_epoch, validation_data=validation_dataset)
     # model.fit(train_dataset, epochs=epochs, batch_size=batch_size, steps_per_epoch=steps_per_epoch, validation_data=train_dataset)
