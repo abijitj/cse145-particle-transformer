@@ -98,8 +98,8 @@ def _read_files(filelist, branches, load_range=None, show_progressbar=False, fil
                 a = _read_parquet(filepath, branches, load_range=load_range)
         except Exception as e:
             a = None
-            print('When reading file %s:', filepath)
-            print(traceback.format_exc())
+            #print('When reading file %s:', filepath)
+            #print(traceback.format_exc())
         if a is not None:
             if file_magic is not None:
                 import re

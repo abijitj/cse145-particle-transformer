@@ -181,16 +181,16 @@ class _SimpleIter(object):
             else:
                 self.load_range = (start_pos, start_pos + interval)
 
-        print(
-            'Init iter [%d], will load %d (out of %d*%s=%d) files with load_range=%s:\n%s', 0
-            if self.worker_info is None else self.worker_info.id, len(self.filelist),
-            len(sum(self._init_file_dict.values(), [])),
-            self._file_fraction, int(len(sum(self._init_file_dict.values(), [])) * self._file_fraction),
-            str(self.load_range),
-            '\n'.join(self.filelist[: 3]) + '\n ... ' + self.filelist[-1],)
+        # print(
+        #     'Init iter [%d], will load %d (out of %d*%s=%d) files with load_range=%s:\n%s', 0
+        #     if self.worker_info is None else self.worker_info.id, len(self.filelist),
+        #     len(sum(self._init_file_dict.values(), [])),
+        #     self._file_fraction, int(len(sum(self._init_file_dict.values(), [])) * self._file_fraction),
+        #     str(self.load_range),
+        #     '\n'.join(self.filelist[: 3]) + '\n ... ' + self.filelist[-1],)
 
-        print('Restarted DataIter %s, load_range=%s, file_list:\n%s' %
-                     (self._name, str(self.load_range), json.dumps(self.worker_file_dict, indent=2)))
+        #print('Restarted DataIter %s, load_range=%s, file_list:\n%s' %
+        #             (self._name, str(self.load_range), json.dumps(self.worker_file_dict, indent=2)))
 
         # reset file fetching cursor
         self.ipos = 0 if self._fetch_by_files else self.load_range[0]
@@ -338,8 +338,8 @@ class SimpleIterDataset(torch.utils.data.IterableDataset):
             data_config_autogen_file = data_config_file.replace('.yaml', '.%s.auto.yaml' % data_config_md5)
             if os.path.exists(data_config_autogen_file):
                 data_config_file = data_config_autogen_file
-                print('Found file %s w/ auto-generated preprocessing information, will use that instead!' %
-                             data_config_file)
+           #     print('Found file %s w/ auto-generated preprocessing information, will use that instead!' %
+           #                  data_config_file)
 
         # load data config (w/ observers now -- so they will be included in the auto-generated yaml)
         self._data_config = DataConfig.load(data_config_file)
