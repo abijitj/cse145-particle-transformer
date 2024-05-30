@@ -151,7 +151,8 @@ class DataConfig(object):
 
         if print_info:
             def _log(msg, *args, **kwargs):
-                print(msg, *args, **kwargs)
+                pass
+                #print(msg, *args, **kwargs)
             _log('preprocess config: %s', str(self.preprocess))
             _log('selection: %s', str(self.selection))
             _log('test_time_selection: %s', str(self.test_time_selection))
