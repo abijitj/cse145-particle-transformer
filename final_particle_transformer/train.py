@@ -27,7 +27,7 @@ validation_split = 0.2
 print(tf.config.list_physical_devices(), device)
 
 training_data_root = '/home/particle/particle_transformer/retrain_test_1/JetClass/Pythia/train_100M/'
-train_file_dict = {data_label: training_data_root + data_label + "*.root" for data_label in ['HToBB', 'HToCC', 'HToGG', 'HToWW2Q1L', 'HToWW4Q', 'TTBar', 'TTBarLep', 'WToQQ', 'ZToQQ', 'ZJetsToNuNu']}
+train_file_dict = {data_label: glob(training_data_root + data_label + "*.root") for data_label in ['HToBB', 'HToCC', 'HToGG', 'HToWW2Q1L', 'HToWW4Q', 'TTBar', 'TTBarLep', 'WToQQ', 'ZToQQ', 'ZJetsToNuNu']}
 validation_file_dict = {'validation': glob('/home/particle/particle_transformer/retrain_test_1/JetClass/Pythia/val_5M/*.root')}
 #print('cwd\n\n',os.getcwd())
 #file_dict = {'validation':glob(r'C:\Users\andre\Desktop\UCSD\CSE145\cse145-particle-transformer\final_particle_transformer\dataloading\JetClass_Pythia_val_5M\val_5M\*.root')}
