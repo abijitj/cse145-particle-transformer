@@ -63,6 +63,7 @@ class ParticleTransformer(k.Model):
         self.norm = k.layers.LayerNormalization()
         
         self.fc = k.Sequential()
+        # self.fc.add(k.layers.Input(shape=()))
         if fc_params is not None:
             in_dim = embed_dim 
             for out_dim, drop_rate in fc_params:
@@ -135,11 +136,16 @@ class ParticleTransformer(k.Model):
             cls_tokens = block(x, x_cls=cls_tokens, padding_mask=padding_mask)
             print(f"After calling class attention block...{i}", x.shape, cls_tokens.shape)
 
-        
-        x_cls = tf.squeeze(self.norm(cls_tokens))
+        print("Before squeeze", cls_tokens.shape) # (1, batch_size, embed_dim)
+        x_cls = tf.squeeze(self.norm(cls_tokens), axis=0) # removes the first dimension
         
         if self.fc is None:
             return x_cls
+        # for layer in self.fc: 
+        #     output = layer(x_cls) 
+        #     x_cls = output 
+
+        print("Before fc", x_cls.shape)
         output = self.fc(x_cls)
         if self.for_inference:
             output = k.layers.Softmax()(output, axis=-1)

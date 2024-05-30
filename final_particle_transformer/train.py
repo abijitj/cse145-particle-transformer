@@ -12,6 +12,7 @@ import os
 
 device = "/GPU:0" if tf.config.list_physical_devices('GPU') else "/cpu:0"
 
+
 tf.random.set_seed(0)
 np.random.seed(0)
 
@@ -48,6 +49,7 @@ model = ParticleTransformer((128, 2), num_classes=10)
 # model = Embed([2, 128], [128, 512, 128], activation='gelu')
 
 with tf.device(device):
+    print("Using ", device)
     loss_function = k.losses.SparseCategoricalCrossentropy(from_logits=True)
     model.compile(
         optimizer=k.optimizers.Adam(learning_rate=learning_rate),

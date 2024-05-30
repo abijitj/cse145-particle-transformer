@@ -58,7 +58,7 @@ class Block(k.Model):
             # class attention: https://arxiv.org/pdf/2103.17239.pdf
             residual = x_cls
             u = tf.concat([x_cls, x], axis=0) # (seq_len+1, batch, embed_dim)
-            print("Got past concat...")
+            # print("Got past concat...")
             u = self.pre_attn_norm(u)   
 
             # (1, batch, embed_dim)
