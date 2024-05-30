@@ -35,7 +35,7 @@ validation_file_dict = {'validation': glob('/home/particle/particle_transformer/
 data_config_file = './dataloading/dataconfig.yaml'
 train_dataloader = create_tf_dataloader(train_file_dict, data_config_file)
 
-for test in dataloader:
+for test in train_dataloader:
     print("THIS IS THE DATALOADER!!!")
     print(len(test)) # 2
     print("something1", test[0].shape, test[1].shape) # (2, 128), ()
