@@ -1,42 +1,43 @@
-from glob import glob
-import numpy as np
-import tensorflow as tf
-import keras as k
-from tqdm import tqdm
-from particle_transformer import ParticleTransformer
-from particle_transformer_tagger import ParticleTransformerTagger
-from embed import Embed 
+try:   
+    from glob import glob
+    import numpy as np
+    import tensorflow as tf
+    import keras as k
+    from tqdm import tqdm
+    from particle_transformer import ParticleTransformer
+    from particle_transformer_tagger import ParticleTransformerTagger
+    from embed import Embed 
 
-from dataloading.dataset import create_tf_dataloader
-import os
+    from dataloading.dataset import create_tf_dataloader
+    import os
 
-device = "/GPU:0" if tf.config.list_physical_devices('GPU') else "/cpu:0"
+    device = "/GPU:0" if tf.config.list_physical_devices('GPU') else "/cpu:0"
 
 
-tf.random.set_seed(0)
-np.random.seed(0)
+    tf.random.set_seed(0)
+    np.random.seed(0)
 
-# Hyperparameters
-learning_rate = 1e-3
-batch_size = 200
+    # Hyperparameters
+    learning_rate = 1e-3
+    batch_size = 200
 
-epochs = 5
-steps_per_epoch = 1000
+    epochs = 5
+    steps_per_epoch = 1000
 
-validation_steps = 10
-print(tf.config.list_physical_devices(), device)
+    validation_steps = 10
+    print(tf.config.list_physical_devices(), device)
 
-data_labels = ['HToBB', 'HToCC', 'HToGG', 'HToWW2Q1L', 'HToWW4Q', 'TTBar', 'TTBarLep', 'WToQQ', 'ZToQQ', 'ZJetsToNuNu']
+    data_labels = ['HToBB', 'HToCC', 'HToGG', 'HToWW2Q1L', 'HToWW4Q', 'TTBar', 'TTBarLep', 'WToQQ', 'ZToQQ', 'ZJetsToNuNu']
 
-training_data_root = '/home/particle/particle_transformer/retrain_test_1/JetClass/Pythia/train_100M/'
-train_file_dict = {data_label: glob(training_data_root + data_label + "*.root") for data_label in data_labels}
-validation_file_dict = {'validation': glob('/home/particle/particle_transformer/retrain_test_1/JetClass/Pythia/val_5M/*.root')}
-#print('cwd\n\n',os.getcwd())
-#file_dict = {'validation':glob(r'C:\Users\andre\Desktop\UCSD\CSE145\cse145-particle-transformer\final_particle_transformer\dataloading\JetClass_Pythia_val_5M\val_5M\*.root')}
-#file_dict = {'validation': glob('C:/Users/Abiji/Documents/ABClasses/CSE145/cse145-particle-transformer/final_particle_transformer/dataloading/JetClass_Pythia_val_5M/val_5M/*.root')}
-data_config_file = './dataloading/dataconfig.yaml'
+    training_data_root = '/home/particle/particle_transformer/retrain_test_1/JetClass/Pythia/train_100M/'
+    train_file_dict = {data_label: glob(training_data_root + data_label + "*.root") for data_label in data_labels}
+    validation_file_dict = {'validation': glob('/home/particle/particle_transformer/retrain_test_1/JetClass/Pythia/val_5M/*.root')}
+    #print('cwd\n\n',os.getcwd())
+    #file_dict = {'validation':glob(r'C:\Users\andre\Desktop\UCSD\CSE145\cse145-particle-transformer\final_particle_transformer\dataloading\JetClass_Pythia_val_5M\val_5M\*.root')}
+    #file_dict = {'validation': glob('C:/Users/Abiji/Documents/ABClasses/CSE145/cse145-particle-transformer/final_particle_transformer/dataloading/JetClass_Pythia_val_5M/val_5M/*.root')}
+    data_config_file = './dataloading/dataconfig.yaml'
 
-try:
+
     train_dataloader = create_tf_dataloader(train_file_dict, data_config_file)
     validation_dataloader = create_tf_dataloader(validation_file_dict, data_config_file)
 
