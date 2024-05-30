@@ -23,7 +23,7 @@ batch_size = 200
 epochs = 5
 steps_per_epoch = 1000
 
-validation_split = 0.2
+validation_steps = 10
 print(tf.config.list_physical_devices(), device)
 
 data_labels = ['HToBB', 'HToCC', 'HToGG', 'HToWW2Q1L', 'HToWW4Q', 'TTBar', 'TTBarLep', 'WToQQ', 'ZToQQ', 'ZJetsToNuNu']
@@ -65,12 +65,11 @@ try:
         model.compile(
             optimizer=k.optimizers.Adam(learning_rate=learning_rate),
             loss=loss_function,
-            metrics=['val_loss', 'val_accuracy']
+            metrics=['accuracy']
         )
-        #validation_split=validation_split, validation_batch_size=batch_size, validation_steps=20
         #TODO validation data shouldn't be the same as training data
         
-        model.fit(train_dataset, epochs=epochs, batch_size=batch_size, steps_per_epoch=steps_per_epoch, validation_data=validation_dataset)
+        model.fit(train_dataset, epochs=epochs, batch_size=batch_size, steps_per_epoch=steps_per_epoch, validation_data=validation_dataset, validation_steps=10)
         # model.fit(train_dataset, epochs=epochs, batch_size=batch_size, steps_per_epoch=steps_per_epoch, validation_data=train_dataset)
 except Exception as e:
     log_file = open('./error.log', 'w')
