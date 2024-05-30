@@ -429,7 +429,7 @@ def create_tf_dataloader(file_dict, data_config_file):
 
     def process_pytorch_data(data):
         #print('dataf', data)
-        print('data shape: ', len(data), len(data[0]), data[0]['pf_points'].shape)
+        #print('data shape: ', len(data), len(data[0]), data[0]['pf_points'].shape)
         # print((tf.convert_to_tensor(data[0]['pf_points'].reshape(1, -1, -1), tf.float32), tf.constant(data[1]['_label_'], dtype=tf.int32)))
         # print((tf.convert_to_tensor(data[0]['pf_points'].reshape(1, 2, -1), tf.float32), tf.constant(data[1]['_label_'], dtype=tf.int32)))
         #print((tf.convert_to_tensor(data[0]['pf_points'], tf.float32), tf.constant(data[1]['_label_'], dtype=tf.int32)))
