@@ -17,19 +17,23 @@ tf.random.set_seed(0)
 np.random.seed(0)
 
 # Hyperparameters
-learning_rate = 3e-4
-batch_size = 256
+learning_rate = 1e-3
+batch_size = 200
 
 epochs = 5
 steps_per_epoch = 1000
 
 validation_split = 0.2
+print(tf.config.list_physical_devices(), device)
 
+training_data_root = '/home/particle/particle_transformer/retrain_test_1/JetClass/Pythia/train_100M/'
+train_file_dict = {data_label: training_data_root + data_label + "*.root" for data_label in ['HToBB', 'HToCC', 'HToGG', 'HToWW2Q1L', 'HToWW4Q', 'TTBar', 'TTBarLep', 'WToQQ', 'ZToQQ', 'ZJetsToNuNu']}
+validation_file_dict = {'validation': glob('/home/particle/particle_transformer/retrain_test_1/JetClass/Pythia/val_5M/*.root')}
 #print('cwd\n\n',os.getcwd())
-#file_dict = {'validation':glob('C:/Users/andre/Desktop/UCSD/CSE145/cse145-particle-transformer/dataloading/JetClass_Pythia_val_5M/val_5M/*.root')}
-file_dict = {'validation': glob('C:/Users/Abiji/Documents/ABClasses/CSE145/cse145-particle-transformer/final_particle_transformer/dataloading/JetClass_Pythia_val_5M/val_5M/*.root')}
+#file_dict = {'validation':glob(r'C:\Users\andre\Desktop\UCSD\CSE145\cse145-particle-transformer\final_particle_transformer\dataloading\JetClass_Pythia_val_5M\val_5M\*.root')}
+#file_dict = {'validation': glob('C:/Users/Abiji/Documents/ABClasses/CSE145/cse145-particle-transformer/final_particle_transformer/dataloading/JetClass_Pythia_val_5M/val_5M/*.root')}
 data_config_file = './dataloading/dataconfig.yaml'
-dataloader = create_tf_dataloader(file_dict, data_config_file)
+train_dataloader = create_tf_dataloader(train_file_dict, data_config_file)
 
 # for test in dataloader:
 #     print("THIS IS THE DATALOADER!!!")
@@ -37,12 +41,12 @@ dataloader = create_tf_dataloader(file_dict, data_config_file)
 #     print("something1", test[0].shape, test[1].shape) # (2, 128), ()
 #     break
 
-train_dataset = dataloader.batch(batch_size) 
-for test in train_dataset:  
-    print("THIS IS THE TRAIN DATASET!!!")
-    print(len(test)) # 2
-    print("something2", test[0].shape, test[1].shape) # (batch_size, 2, 128), (batch_size, )
-    break
+train_dataset = train_dataloader.batch(batch_size) 
+#for test in train_dataset:  
+#    print("THIS IS THE TRAIN DATASET!!!")
+#    print(len(test)) # 2
+#    print("something2", test[0].shape, test[1].shape) # (batch_size, 2, 128), (batch_size, )
+#    break
 
 model = ParticleTransformer((128, 2), num_classes=10)
 # model = ParticleTransformerTagger((1, 2, 128), )
