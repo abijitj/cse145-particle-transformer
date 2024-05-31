@@ -423,7 +423,7 @@ class SimpleIterDataset(torch.utils.data.IterableDataset):
 
 def create_tf_dataloader(file_dict, data_config_file):
     #print(file_dict, data_config_file)
-    pytorch_dataloader = SimpleIterDataset(file_dict=file_dict, data_config_file=data_config_file)
+    pytorch_dataloader = SimpleIterDataset(file_dict=file_dict, data_config_file=data_config_file, fetch_step=0.001)
 
     #def process_pytorch_data(data):
     #    return ({datum: tf.convert_to_tensor(data[0][datum], dtype=tf.float32) for datum in data[0].keys()}, {'label': tf.constant(data[1]['_label_'], dtype=tf.int32)})
