@@ -21,13 +21,13 @@ if __name__ == '__main__':
         np.random.seed(0)
 
         # Hyperparameters
-        learning_rate = 1e-3
-        batch_size = 200
+        learning_rate = 3e-4
+        batch_size = 256
 
         epochs = 5
         steps_per_epoch = 1000
 
-        validation_steps = 10
+        validation_steps = 80
         print(tf.config.list_physical_devices(), device)
 
         data_labels = ['HToBB', 'HToCC', 'HToGG', 'HToWW2Q1L', 'HToWW4Q', 'TTBar', 'TTBarLep', 'WToQQ', 'ZToQQ', 'ZJetsToNuNu']
