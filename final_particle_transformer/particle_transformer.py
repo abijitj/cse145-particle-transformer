@@ -80,14 +80,19 @@ class ParticleTransformer(k.Model):
 
         #self.mask_transpose = k.layers.Permute((2, 0, 1))
     
-    def call(self, x, v=None, mask=None, uu=None, uu_idx=None, training=False):
+    # def call(self, x, v=None, mask=None, uu=None, uu_idx=None, training=False):
+    def call(self, inputs, v=None, mask=None, uu=None, uu_idx=None, training=False):
+    # def call(self, x, mask, v=None, uu=None, uu_idx=None, training=False):
         """
-            x: (N, C, P) - (batch_size, # channels = # features = 128, 2)
+            x: (N, C, P) 
             v: (N, 4, P) [px,py,pz,energy]
             mask: (N, 1, P) -- real particle = 1, padded = 0
             for pytorch: uu (N, C', num_pairs), uu_idx (N, 2, num_pairs)
             for onnx: uu (N, C', P, P), uu_idx=None
         """
+        x = inputs[0] # pf_points / pf_features
+        v = inputs[1] # pf_vectors
+        mask = inputs[2] # pf_mask 
 
         if not self.for_inference:
             #print("testing1...")
@@ -102,6 +107,7 @@ class ParticleTransformer(k.Model):
             # print("After sequence trimmer x.shape:", x.shape)
             # print("After sequence trimmer mask.shape:", mask.shape if mask is not None else "Mask is None")
 
+            #print(mask.shape)
             padding_mask = tf.logical_not(tf.squeeze(mask, axis=1))  # assuming mask is of shape (N, 1, P)
         
         # TODO: mixed precision not added yet
@@ -110,7 +116,9 @@ class ParticleTransformer(k.Model):
         # input embedding
         # print("Before embed", x.shape)
         x = self.embed(x)
+        # print(x.shape, mask.shape)
         mask_permute = tf.transpose(~mask, perm=(2,0,1))
+        # print(x.shape, mask_permute.shape)
         x = tf.where(mask_permute, x, 0) 
         # print("After embed", x.shape) # (P, N, C) 
 

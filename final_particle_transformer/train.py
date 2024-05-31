@@ -22,7 +22,7 @@ if __name__ == '__main__':
 
         # Hyperparameters
         learning_rate = 3e-5
-        batch_size = 192
+        batch_size = 16 #192
 
         epochs = 15
         steps_per_epoch = 2000
@@ -43,25 +43,43 @@ if __name__ == '__main__':
 
         train_dataloader = create_tf_dataloader(train_file_dict, data_config_file)
         validation_dataloader = create_tf_dataloader(validation_file_dict, data_config_file)
+        
+        # counts= {0: 0, 1: 0, 2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0}
+        # i = 0
+        # for test in train_dataloader:
+        #     print("THIS IS THE DATALOADER!!!")
+        #     #print(len(test)) # 2
+        #     #print("something1", test[0].shape, test[1].shape) # (2, 128), ()
+        #     print(test[1])
+        #     counts[int(test[1])] += 1
+        #     i += 1
 
-        for test in train_dataloader:
-            print("THIS IS THE DATALOADER!!!")
-            print(len(test)) # 2
-            print("something1", test[0].shape, test[1].shape) # (2, 128), ()
-            break
+        #     if i == 100000:
+        #         break
 
-        train_dataset = train_dataloader.batch(batch_size, num_parallel_calls=28)
-        validation_dataset = validation_dataloader.batch(batch_size, num_parallel_calls=28)
+        # print('counts', counts)
 
-        #for test in train_dataset:  
-        #    print("THIS IS THE TRAIN DATASET!!!")
-        #    print(len(test)) # 2
-        #    print("something2", test[0].shape, test[1].shape) # (batch_size, 2, 128), (batch_size, )
-        #    break
+        # def mapping(pf_points, pf_features, pf_vectors, pf_mask, label):
+        def mapping(pf_features, pf_vectors, pf_mask, label):
+            # return (pf_features, {"mask" : pf_mask}), label 
+            # return {'x' : pf_features, 'mask' : pf_mask}, label 
+            return (pf_features, pf_vectors, pf_mask), label 
+
+        train_dataset = train_dataloader.map(mapping).batch(batch_size, drop_remainder=True, num_parallel_calls=tf.data.AUTOTUNE)
+        # train_dataset = train_dataloader.batch(batch_size, drop_remainder=True, num_parallel_calls=tf.data.AUTOTUNE)
+        validation_dataset = validation_dataloader.map(mapping).batch(batch_size, num_parallel_calls=tf.data.AUTOTUNE)
+        # validation_dataset = validation_dataloader.batch(batch_size, num_parallel_calls=tf.data.AUTOTUNE)
+
+        # for i, test in enumerate(train_dataset):  
+        #     print("THIS IS THE TRAIN DATASET!!!")
+        #     #print(test)
+        #     print(test)
+        #     #print(len(test), len(test[0]))
+        #     #print("something2", test[0].shape, test[1].shape) # (batch_size, 2, 128), (batch_size, )
+        #     if i == 5: 
+        #         break
 
         model = ParticleTransformer((128, 2), num_classes=10)
-        # model = ParticleTransformerTagger((1, 2, 128), )
-        # model = Embed([2, 128], [128, 512, 128], activation='gelu')
 
         with tf.device(device):
             print("Using ", device)
@@ -73,8 +91,18 @@ if __name__ == '__main__':
             )
             #TODO validation data shouldn't be the same as training data
             
-            model.fit(train_dataset, epochs=epochs, batch_size=batch_size, steps_per_epoch=steps_per_epoch, validation_data=validation_dataset, validation_steps=10, verbose=1)
-            exit()
+            print("1:")
+            # model.fit(train_dataset, epochs=epochs, steps_per_epoch=steps_per_epoch, verbose=1)
+            model.fit(train_dataset, 
+                    epochs=epochs, 
+                    steps_per_epoch=steps_per_epoch, 
+                    validation_data=validation_dataset, 
+                    validation_steps=10, 
+                    verbose=1
+            )
+            print("2:")
+
+            #exit()
             # model.fit(train_dataset, epochs=epochs, batch_size=batch_size, steps_per_epoch=steps_per_epoch, validation_data=train_dataset)
     except Exception as e:
         log_file = open('./error.log', 'w')

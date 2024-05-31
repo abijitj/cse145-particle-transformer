@@ -6,6 +6,23 @@ import tensorflow as tf
 import keras as k
 from utils import pairwise_lv_fts
 
+def get_tril_indices(seq_len, offset=0):
+    # Create a mask for the lower triangular part of the matrix
+    mask = tf.ones((seq_len, seq_len), dtype=tf.int32)
+    mask = tf.linalg.band_part(mask, num_lower=-1, num_upper=0)
+    
+    if offset != 0:
+        mask = tf.roll(mask, shift=offset, axis=1)
+        mask = tf.linalg.band_part(mask, num_lower=-1, num_upper=0)
+    
+    indices = tf.where(mask)
+    
+    # Split indices into separate row and column indices
+    rows, cols = indices[:, 0], indices[:, 1]
+    
+    return rows, cols
+
+
 class Embed(k.Model):
     def __init__(self, input_dim, dims, normalize_input=True, activation='gelu'):
         super(Embed, self).__init__()
@@ -101,6 +118,7 @@ class PairEmbed(tf.keras.Model):
     def call(self, x, uu=None, training=False):
         # x: (batch, v_dim, seq_len)
         # uu: (batch, v_dim, seq_len, seq_len)
+        print(x.shape)
         assert (x is not None or uu is not None)
 
         if x is not None:
@@ -109,7 +127,7 @@ class PairEmbed(tf.keras.Model):
             batch_size, _, seq_len, _ = uu.shape
 
         if self.is_symmetric and not self.for_onnx:
-            i, j = tf.experimental.numpy.tril_indices(seq_len, k=-1 if self.remove_self_pair else 0)
+            i, j = get_tril_indices(seq_len, offset=-1 if self.remove_self_pair else 0)               
             if x is not None:
                 x = tf.repeat(tf.expand_dims(x, -1), seq_len, axis=-1)
                 xi = tf.gather(x, i, axis=2)
@@ -140,6 +158,9 @@ class PairEmbed(tf.keras.Model):
 
         if self.is_symmetric and not self.for_onnx:
             y = tf.zeros((batch_size, self.out_dim, seq_len, seq_len), dtype=elements.dtype)
+            print(y.shape, i.shape, j.shape, tf.stack((i,j)).shape, elements.shape)
+            # y[:, :, i, j] = elements
+            # y[:, :, j, i] = elements
             y = tf.tensor_scatter_nd_update(y, tf.stack((i, j), axis=-1), elements)
             y = tf.tensor_scatter_nd_update(y, tf.stack((j, i), axis=-1), elements)
         else:

@@ -40,15 +40,15 @@ def atan2(y, x):
 
 def to_ptrapphim(x, return_mass=True, eps=1e-8, for_onnx=False):
     # x: (N, 4, ...), dim1 : (px, py, pz, E)
-    px, py, pz, energy = x.split((1, 1, 1, 1), dim=1)
+    px, py, pz, energy = tf.split(x, (1, 1, 1, 1), axis=1)
     pt = tf.sqrt(to_pt2(x, eps=eps))
     rapidity = 0.5 * tf.math.log(1 + (2 * pz) / tf.clip_by_value((energy - pz), clip_value_min=1e-20, clip_value_max=float('inf')))
     phi = (atan2 if for_onnx else tf.math.atan2)(py, px)
     if not return_mass:
-        return tf.constant((pt, rapidity, phi), axis=1)
+        return tf.concat((pt, rapidity, phi), axis=1)
     else:
         m = tf.sqrt(to_m2(x, eps=eps))
-        return tf.constant((pt, rapidity, phi, m), axis=1)
+        return tf.concat((pt, rapidity, phi, m), axis=1)
 
 
 def boost(x, boostp4, eps=1e-8):
