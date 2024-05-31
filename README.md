@@ -2,12 +2,12 @@
 
 This repo contains a project that is working towards building a quantized and more efficient version of the Particle Transformer (ParT) machine learning model described in this [paper](https://arxiv.org/abs/2202.03772) and its associated [repo](https://github.com/jet-universe/particle_transformer). 
 
-## Team Members
+# Team Members
  - Abijit Jayachandran [ajayachandran@ucsd.edu](ajayachandran@ucsd.edu)
  - Andrew Masek [amasek@ucsd.edu](amasek@ucsd.edu)
  - Juan Yin [j9yin@ucsd.edu](j9yin@ucsd.edu)
 
-##  Abstract & Introduction
+#  Abstract & Introduction
 Running large machine learning models on the edge at the Large Hadron Collider is a challenging task because of the limited computing available and the time constraints. Existing models are often too large and therefore take a lot of memory to process and time to process the data. One method to get around this problem is to quantize existing models and use FPGAs (as opposed to general-purpose GPUs) for faster and more specialized processing. Our project aims to quantize an existing Particle Transformer model from PyTorch to QKeras. This new quantized model can then be implemented on an FPGA using the DeepSoCFlow library. We hope to maintain similar accuracy levels but achieve faster inference time. 
 
 # How to run Quantized Particle Transformer
@@ -42,24 +42,19 @@ Training dataset faster using GPU:
 
 # Technical Materials
 
-### Dataset 
-We have a large particle jets dataset used for training and testing by downloading from [website](https://zenodo.org/records/6619768), it is a large dataset with more than 200GB Jets data.
+## Dataset 
+We have a large particle jets dataset used for training and testing by downloading from [website](https://zenodo.org/records/6619768), it is a large dataset with more than 200GB Jets data which takes 7-12 hours to download.
 
-### Reference Models Used
+## Reference Models Used
 - [Partile Transformer](https://github.com/jet-universe/particle_transformer)
 - [weaver-core](https://github.com/hqucms/weaver-core)
 - [Nano-GPT](https://github.com/karpathy/nanoGPT)
 
-### Methods
+## Methods
 
 #### 1. Retrain the model
-In this section, we download the large particle jets dataset to train the P article Transformer model that was implemented using PyTorch...
+In this section, we download the large particle jets dataset to train the Particle Transformer model that was implemented using PyTorch...
 
-#### 2. Practice translation from PyTorch to TensorFlow
-In this section, we trying to get familiar with the transformer model, so we reimplement a transformer called nanoGPT that is 
-
-
-#### Retain model records
  - Result 1 - final ACC = 0.834:
    epoch = 2
    ![image](https://github.com/abijitj/cse145-particle-transformer/assets/79886525/1ff3ad89-5ea9-44ce-849b-adb590289140)
@@ -74,7 +69,20 @@ In this section, we trying to get familiar with the transformer model, so we rei
    <img width="731" alt="截屏2024-04-27 19 43 21" src="https://github.com/abijitj/cse145-particle-transformer/assets/79886525/e6e00183-33e8-4739-b8c0-40924f4aefb1">
 
 
-#### Pytorch to Keras and QKeras translation
+#### 2. Practice translation from PyTorch to TensorFlow
+In this section, we try to get familiar with the transformer model, so we reimplement a transformer model called [nanoGPT](https://github.com/karpathy/nanoGPT).
+First of all, we followed instructions to rewrite the transformer architecture in order to get a sence of how to create a transformer and get familiar with all the components like multi-head attention blocks and embedded layers with different activation functions. 
+
+After simulating and training the NanoGPT model, we translate the nanoGPT from Pytorch to Tensorflow to verify that the translation won't affect the performance of the model.
+![image](https://github.com/abijitj/cse145-particle-transformer/assets/79886525/8f722ab2-d1e0-416b-a6ce-94885af8b189)
+![image](https://github.com/abijitj/cse145-particle-transformer/assets/79886525/30695dc4-ad30-4fba-80bc-6acc8572d825)
+
+
+Then we begin to do the translation on the particle transformer model from [weaver-core repo](https://github.com/hqucms/weaver-core/blob/main/weaver/nn/model/ParticleTransformer.py). 
+...
+
+
+#### Pytorch to Keras and QKeras translations
  - [nanoPGT translation](https://github.com/abijitj/nanoGPT)
  - [bigram translation](https://github.com/JuanYin1/smallGPT_keras)
  - [Pytorch nanoGPT & bigram model](https://github.com/portoaj/NanoGPT-Fork)
