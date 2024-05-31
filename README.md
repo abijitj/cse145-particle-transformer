@@ -1,6 +1,5 @@
-# Quantized Particle Transformer
+![quantized-particle-transformer-high-resolution-logo-white](https://github.com/abijitj/cse145-particle-transformer/assets/79886525/6307c880-e92c-45e6-9447-d61ca67482e0)
 
-## Overview
 This repo contains a project that is working towards building a quantized and more efficient version of the Particle Transformer (ParT) machine learning model described in this [paper](https://arxiv.org/abs/2202.03772) and its associated [repo](https://github.com/jet-universe/particle_transformer). 
 
 ## Team Members
@@ -11,16 +10,45 @@ This repo contains a project that is working towards building a quantized and mo
 ##  Abstract & Introduction
 Running large machine learning models on the edge at the Large Hadron Collider is a challenging task because of the limited computing available and the time constraints. Existing models are often too large and therefore take a lot of memory to process and time to process the data. One method to get around this problem is to quantize existing models and use FPGAs (as opposed to general-purpose GPUs) for faster and more specialized processing. Our project aims to quantize an existing Particle Transformer model from PyTorch to QKeras. This new quantized model can then be implemented on an FPGA using the DeepSoCFlow library. We hope to maintain similar accuracy levels but achieve faster inference time. 
 
+# How to run Quantized Particle Transformer
+## Setting up
+Quantized Particle Transformer need to run in particular environments. To do this we have included a requirements.txt file that contains the required environment that can be used for preprocessing and postprocessing for your Quantized Particle Transformer run.
+The run syntax is as follows:
+```
+pip install -r requirements.txt
+```
 
-## Technical Materials
+## Downloading dataset
+After making sure the environment is correct, we should download our large dataset:
+```
+./get_datasets.py JetClass -d [DATA_DIR]
+```
+
+## Training
+The QPT model are implemented in Tensorflow instead of Pytorch, so the training is not based on the weaver framework for dataset loading and transformation. To run the training on the JetClass dataset:
+```
+python3 train.py
+```
+
+## Multi-gpu support:
+Training dataset faster using GPU:
+```
+```
+
+
+
+
+
+
+# Technical Materials
 
 ### Dataset 
 We have a large particle jets dataset used for training and testing by downloading from [website](https://zenodo.org/records/6619768), it is a large dataset with more than 200GB Jets data.
 
 ### Reference Models Used
-[Partile Transformer](https://github.com/jet-universe/particle_transformer)
-[weaver-core](https://github.com/hqucms/weaver-core)
-[Nano-GPT](https://github.com/karpathy/nanoGPT)
+- [Partile Transformer](https://github.com/jet-universe/particle_transformer)
+- [weaver-core](https://github.com/hqucms/weaver-core)
+- [Nano-GPT](https://github.com/karpathy/nanoGPT)
 
 ### Methods
 
