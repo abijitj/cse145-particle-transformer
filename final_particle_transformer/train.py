@@ -50,8 +50,8 @@ if __name__ == '__main__':
             print("something1", test[0].shape, test[1].shape) # (2, 128), ()
             break
 
-        train_dataset = train_dataloader.batch(batch_size, num_parallel_calls=10)
-        validation_dataset = validation_dataloader.batch(batch_size, num_parallel_calls=10)
+        train_dataset = train_dataloader.batch(batch_size, num_parallel_calls=28)
+        validation_dataset = validation_dataloader.batch(batch_size, num_parallel_calls=28)
 
         #for test in train_dataset:  
         #    print("THIS IS THE TRAIN DATASET!!!")
