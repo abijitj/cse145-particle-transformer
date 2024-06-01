@@ -71,6 +71,7 @@ After simulating and training the NanoGPT model, we translate the nanoGPT from P
 ![image](https://github.com/abijitj/cse145-particle-transformer/assets/79886525/30695dc4-ad30-4fba-80bc-6acc8572d825)
 
 
+### 3. Apply Transformation on Building Particle Transformer Model
 Then we begin to do the translation on the particle transformer model from [weaver-core repo](https://github.com/hqucms/weaver-core/blob/main/weaver/nn/model/ParticleTransformer.py). 
 ...
 
@@ -82,8 +83,13 @@ Then we begin to do the translation on the particle transformer model from [weav
 
 
 ## REFERENCES
-- [Quantization helps reduce MAC](https://arxiv.org/pdf/2106.08295)
-- 
+- [Particle Transformer Paper](https://arxiv.org/pdf/2202.03772)
+- [NanoGPT Model Guide](https://www.youtube.com/watch?v=kCc8FmEb1nY&t=4298s)
+- [NanoGPT Documentation](https://github.com/abarajithan11/nanoGPT)
+- [TensorFlow Input Pipline](https://www.tensorflow.org/guide/data)
+- [QKeras Documentation](https://github.com/google/qkeras/blob/v0.9.0/notebook/QKerasTutorial.ipynb)
+- [Quantization Helps Reduce MAC Paper](https://arxiv.org/pdf/2106.08295)
+
 
    
 
