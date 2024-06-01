@@ -82,7 +82,7 @@ Then we begin to do the translation on the particle transformer model from [weav
  - [Pytorch nanoGPT & bigram model](https://github.com/portoaj/NanoGPT-Fork)
 
 
-## REFERENCES
+# References
 - [Particle Transformer Paper](https://arxiv.org/pdf/2202.03772)
 - [NanoGPT Model Guide](https://www.youtube.com/watch?v=kCc8FmEb1nY&t=4298s)
 - [NanoGPT Documentation](https://github.com/abarajithan11/nanoGPT)
@@ -91,9 +91,8 @@ Then we begin to do the translation on the particle transformer model from [weav
 - [Quantization Helps Reduce MAC Paper](https://arxiv.org/pdf/2106.08295)
 
 
-   
-
-
+# Citation
+[Citation file](https://github.com/abijitj/cse145-particle-transformer/blob/main/CITATION.cff)
 
 
 
