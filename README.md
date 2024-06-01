@@ -25,7 +25,9 @@ After making sure the environment is correct, we should download our large datas
 ```
 
 ## Training
-The QPT model are implemented in Tensorflow instead of Pytorch, so the training is not based on the weaver framework for dataset loading and transformation. To run the training on the JetClass dataset:
+!! make sure you have cuda installedin you computer, for our project, we need [cuda version 10.1](https://www.tensorflow.org/install/source#gpu:~:text=11.0-,tensorflow-2.3.0,10.1,-tensorflow-2.2.0) since it is compatible with our TensorFlow version. Using cuda GPU we could process large dataset through parallel computing, otherwise it will take about 6+ hours to train the entire dataset.
+
+The QPT model are implemented in Tensorflow instead of Pytorch, so the training is not based on the weaver framework for dataset loading and transformation. After To run the training on the JetClass dataset:
 ```
 python3 train.py
 ```
