@@ -38,6 +38,11 @@ python3 train.py
 ## Dataset 
 We have a large particle jets dataset used for training and testing by downloading from [website](https://zenodo.org/records/6619768), it is a large dataset with more than 200GB Jets data which takes more then 7 hours to download.
 
+**[JetClass](https://zenodo.org/record/6619768)** is a new large-scale jet tagging dataset proposed in "[Particle Transformer for Jet Tagging](https://arxiv.org/abs/2202.03772)". It consists of 100M jets for training, 5M for validation and 20M for testing. The dataset contains 10 classes of jets, simulated with [MadGraph](https://launchpad.net/mg5amcnlo) + [Pythia](https://pythia.org/) + [Delphes](https://cp3.irmp.ucl.ac.be/projects/delphes):
+
+![dataset](figures/dataset.png)
+
+
 ## Reference Models Used
 - [Particle Transformer](https://github.com/jet-universe/particle_transformer)
 - [weaver-core](https://github.com/hqucms/weaver-core)
