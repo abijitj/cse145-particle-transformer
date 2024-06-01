@@ -27,7 +27,7 @@ After making sure the environment is correct, we should download our large datas
 ## Training with multi-gpu support
 !! make sure you have CUDA installed in your computer, for our project, we need [cuda version 10.1](https://www.tensorflow.org/install/source#gpu:~:text=11.0-,tensorflow-2.3.0,10.1,-tensorflow-2.2.0) since it is compatible with our TensorFlow version. Using CUDA GPU we could process large datasets through parallel computing, otherwise, it will take about 6+ hours to train the entire dataset.
 
-The QPT model is implemented in Tensorflow instead of Pytorch, so the training is not based on the weaver framework for dataset loading and transformation. After To run the training on the JetClass dataset:
+The QPT model is implemented in Tensorflow instead of Pytorch, so the training is not based on the weaver framework for dataset loading and transformation. After you get CUDA installed, run the training on the JetClass dataset:
 ```
 python3 train.py
 ```
@@ -36,10 +36,10 @@ python3 train.py
 # Technical Materials
 
 ## Dataset 
-We have a large particle jets dataset used for training and testing by downloading from [website](https://zenodo.org/records/6619768), it is a large dataset with more than 200GB Jets data which takes 7-12 hours to download.
+We have a large particle jets dataset used for training and testing by downloading from [website](https://zenodo.org/records/6619768), it is a large dataset with more than 200GB Jets data which takes more then 7 hours to download.
 
 ## Reference Models Used
-- [Partile Transformer](https://github.com/jet-universe/particle_transformer)
+- [Particle Transformer](https://github.com/jet-universe/particle_transformer)
 - [weaver-core](https://github.com/hqucms/weaver-core)
 - [Nano-GPT](https://github.com/karpathy/nanoGPT)
 
