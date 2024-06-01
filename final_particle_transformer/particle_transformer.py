@@ -107,7 +107,7 @@ class ParticleTransformer(k.Model):
             # print("After sequence trimmer x.shape:", x.shape)
             # print("After sequence trimmer mask.shape:", mask.shape if mask is not None else "Mask is None")
 
-            #print(mask.shape)
+            print(mask.shape)
             padding_mask = tf.logical_not(tf.squeeze(mask, axis=1))  # assuming mask is of shape (N, 1, P)
         
         # TODO: mixed precision not added yet
