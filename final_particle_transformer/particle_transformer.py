@@ -9,7 +9,6 @@ from block import Block
 from sequence_trimmer import SequenceTrimmer
 import sys 
 
-# batch_size = 256
 
 class ParticleTransformer(k.Model):
     def __init__(self,
@@ -148,9 +147,6 @@ class ParticleTransformer(k.Model):
         
         if self.fc is None:
             return x_cls
-        # for layer in self.fc: 
-        #     output = layer(x_cls) 
-        #     x_cls = output 
 
         print("Before fc", x_cls.shape)
         output = self.fc(x_cls)

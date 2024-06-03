@@ -26,8 +26,8 @@ if __name__ == '__main__':
 
         epochs = 15
         steps_per_epoch = 2000
-
         validation_steps = 150
+        
         print(tf.config.list_physical_devices(), device)
 
         data_labels = ['HToBB', 'HToCC', 'HToGG', 'HToWW2Q1L', 'HToWW4Q', 'TTBar', 'TTBarLep', 'WToQQ', 'ZToQQ', 'ZJetsToNuNu']
@@ -59,10 +59,7 @@ if __name__ == '__main__':
 
         # print('counts', counts)
 
-        # def mapping(pf_points, pf_features, pf_vectors, pf_mask, label):
         def mapping(pf_features, pf_vectors, pf_mask, label):
-            # return (pf_features, {"mask" : pf_mask}), label 
-            # return {'x' : pf_features, 'mask' : pf_mask}, label 
             return (pf_features, pf_vectors, pf_mask), label 
 
         train_dataset = train_dataloader.map(mapping).batch(batch_size, drop_remainder=True, num_parallel_calls=tf.data.AUTOTUNE)
@@ -81,6 +78,9 @@ if __name__ == '__main__':
 
         model = ParticleTransformer((128, 2), num_classes=10)
 
+        for layer in model.layers:
+            print(layer.name, layer.trainable)
+
         with tf.device(device):
             print("Using ", device)
             loss_function = k.losses.SparseCategoricalCrossentropy(from_logits=True)
@@ -92,7 +92,6 @@ if __name__ == '__main__':
             #TODO validation data shouldn't be the same as training data
             
             print("1:")
-            # model.fit(train_dataset, epochs=epochs, steps_per_epoch=steps_per_epoch, verbose=1)
             model.fit(train_dataset, 
                     epochs=epochs, 
                     steps_per_epoch=steps_per_epoch, 
@@ -102,8 +101,6 @@ if __name__ == '__main__':
             )
             print("2:")
 
-            #exit()
-            # model.fit(train_dataset, epochs=epochs, batch_size=batch_size, steps_per_epoch=steps_per_epoch, validation_data=train_dataset)
     except Exception as e:
         log_file = open('./error.log', 'w')
         log_file.truncate(0)

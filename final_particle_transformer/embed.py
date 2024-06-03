@@ -67,46 +67,37 @@ class PairEmbed(tf.keras.Model):
 
         if self.mode == 'concat':
             input_dim = pairwise_lv_dim + pairwise_input_dim
-            self.module_list = [k.layers.BatchNormalization()] if normalize_input else []
-            for dim in dims:
-                self.module_list.extend([
-                    k.layers.Conv1D(dim, 1, data_format="channels_first"),
-                    k.layers.BatchNormalization(),
-                    k.layers.Activation(tf.nn.gelu if activation == 'gelu' else 'relu'),
-                ])
+            self.module_list = k.Sequential()
+            for i, dim in enumerate(dims):
+                self.module_list.add(k.layers.Conv1D(dim, 1, data_format="channels_first"))
+                self.module_list.add(k.layers.BatchNormalization(axis=1))
+                if i < len(dims) - 1: 
+                    self.module_list.add(k.layers.Activation(tf.nn.gelu if activation == 'gelu' else 'relu'))
                 input_dim = dim
-            if use_pre_activation_pair:
-                self.module_list = self.module_list[:-1]
             self.embed = k.models.Sequential(self.module_list)
         elif self.mode == 'sum':
             if pairwise_lv_dim > 0:
                 print("hello1") 
                 input_dim = pairwise_lv_dim
-                self.module_list = [k.layers.BatchNormalization()] if normalize_input else []
-                for dim in dims:
-                    self.module_list.extend([
-                        k.layers.Conv1D(dim, 1, data_format="channels_first"),
-                        k.layers.BatchNormalization(),
-                        k.layers.Activation(tf.nn.gelu if activation == 'gelu' else 'relu'),
-                    ])
+                self.module_list = k.Sequential()
+                for i, dim in enumerate(dims):
+                    self.module_list.add(k.layers.Conv1D(dim, 1, data_format="channels_first"))
+                    self.module_list.add(k.layers.BatchNormalization(axis=1))
+                    if i < len(dims) -1: 
+                        self.module_list.add(k.layers.Activation(tf.nn.gelu if activation == 'gelu' else 'relu'))
                     input_dim = dim
-                if use_pre_activation_pair:
-                    self.module_list = self.module_list[:-1]
                 self.embed = self.module_list
 
             if pairwise_input_dim > 0:
                 print("hello2") 
                 input_dim = pairwise_input_dim
-                self.fts_module_list = [k.layers.BatchNormalization()] if normalize_input else []
+                self.fts_module_list = k.Sequential() # [k.layers.BatchNormalization()] if normalize_input else []
                 for dim in dims:
-                    self.fts_module_list.extend([
-                        k.layers.Conv1D(dim, 1, data_format="channels_first"),
-                        k.layers.BatchNormalization(),
-                        k.layers.Activation(tf.nn.gelu if activation == 'gelu' else 'relu'),
-                    ])
+                    self.module_list.add(k.layers.Conv1D(dim, 1, data_format="channels_first"))
+                    self.module_list.add(k.layers.BatchNormalization(axis=1))
+                    if i < len(dims) -1: 
+                        self.module_list.add(k.layers.Activation(tf.nn.gelu if activation == 'gelu' else 'relu'))
                     input_dim = dim
-                if use_pre_activation_pair:
-                    self.fts_module_list = self.fts_module_list[:-1]
                 self.fts_embed = self.fts_module_list
         else:
             raise RuntimeError('`mode` can only be `sum` or `concat`')
@@ -123,6 +114,8 @@ class PairEmbed(tf.keras.Model):
         # uu: (batch, v_dim, seq_len, seq_len)
         print(x.shape)
         assert (x is not None or uu is not None)
+
+        # --------with torch.no_grad ----------------
 
         if x is not None:
             batch_size, _, seq_len = x.shape
@@ -182,27 +175,38 @@ class PairEmbed(tf.keras.Model):
                 print("9: x.shape:", x.shape)
             if uu is not None:
                 uu = tf.reshape(uu, (-1, self.pairwise_input_dim, seq_len * seq_len))
-        
+        if self.mode == 'concat': 
+            if x is None: 
+                pair_fts = uu
+            elif uu is None: 
+                pair_fts = x
+            else: 
+                pair_fts = tf.concat((x, uu), axis=1)
+
+        # --------end of with torch.no_grad ----------------
+
         if self.mode == 'concat':
-            pair_fts = uu if x is None else (x if uu is None else tf.concat((x, uu), axis=1))
-            elements = self.run_layer_list(self.embed, pair_fts, training=training)
+            elements = self.embed(pair_fts)
+            # elements = self.run_layer_list(self.embed, pair_fts, training=training)
         elif self.mode == 'sum':
-            print("10: x.shape:", x.shape)
-            
+            # print("10: x.shape:", x.shape)
             if x is None:
-                print("11: uu.shape: ", uu.shape)
-                elements = self.run_layer_list(self.fts_embed, uu, training=training)
+                # print("11: uu.shape: ", uu.shape)
+                #elements = self.run_layer_list(self.fts_embed, uu, training=training)
+                elements = self.fts_embed(uu) 
             elif uu is None:
                 print("11: x.shape: ", x.shape)
-                elements = self.run_layer_list(self.embed, x, training=training)
+                # elements = self.run_layer_list(self.embed, x, training=training)
+                elements = self.embed(x)
                 print("11: elements.shape: ", elements.shape)
             else:
-                print("11: x.shape: ", x.shape)
-                elements = self.run_layer_list(self.embed, x, training=training) + self.run_layer_list(self.fts_embed, uu, training=training)
+                # print("11: x.shape: ", x.shape)
+                elements = self.embed(x)
+                # elements = self.run_layer_list(self.embed, x, training=training) + self.run_layer_list(self.fts_embed, uu, training=training)
 
         if self.is_symmetric and not self.for_onnx:
             y = tf.zeros((batch_size, self.out_dim, seq_len, seq_len), dtype=elements.dtype)
-            print(y.shape, i.shape, j.shape, tf.stack((i,j)).shape, elements.shape)
+            print(y.shape, i.shape, j.shape, elements.shape)
             # y[:, :, i, j] = elements
             # y[:, :, j, i] = element
             batch_dim = tf.range(batch_size, dtype=tf.int64)[:, None, None]
@@ -219,14 +223,14 @@ class PairEmbed(tf.keras.Model):
             j_broadcast = tf.broadcast_to(j_idx, [batch_size, self.out_dim, len(j)])
 
             # Create full index arrays 
-            print("batch_dim.shape:", batch_dim.shape)
+            # print("batch_dim.shape:", batch_dim.shape)
             full_i_idx = tf.stack([batch_dim, dim_dim, i_broadcast, j_broadcast], axis=-1)
             full_j_idx = tf.stack([batch_dim, dim_dim, j_broadcast, i_broadcast], axis=-1)
 
             y = tf.tensor_scatter_nd_update(y, full_i_idx, elements)
             y = tf.tensor_scatter_nd_update(y, full_j_idx, elements)
 
-            print("After y.shape: ", y.shape)
+            # print("After y.shape: ", y.shape)
         else:
             y = tf.reshape(elements, (-1, self.out_dim, seq_len, seq_len))
 
