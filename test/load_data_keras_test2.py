@@ -7,7 +7,7 @@ from tensorflow.keras import layers
 
 # using dataloader to get np array
 from dataloader import read_file
-filepath = './retrain_test_1/JetClass/Pythia/test_20M/'
+filepath = 'PATH TO TEST DATASET'
 x_particles = [] 
 x_jets = []
 y = []
