@@ -429,6 +429,7 @@ def create_tf_dataloader(file_dict, data_config_file):
     #    return ({datum: tf.convert_to_tensor(data[0][datum], dtype=tf.float32) for datum in data[0].keys()}, {'label': tf.constant(data[1]['_label_'], dtype=tf.int32)})
 
     def process_pytorch_data(data):
+        #print('pffeatureshape', data[0]['pf_features'].shape)
         #print('dataf', data)
         #print('data shape: ', len(data), len(data[0]), data[0]['pf_points'].shape)
         # print((tf.convert_to_tensor(data[0]['pf_points'].reshape(1, -1, -1), tf.float32), tf.constant(data[1]['_label_'], dtype=tf.int32)))
@@ -436,9 +437,9 @@ def create_tf_dataloader(file_dict, data_config_file):
         #print((tf.convert_to_tensor(data[0]['pf_points'], tf.float32), tf.constant(data[1]['_label_'], dtype=tf.int32)))
         
         return (#tf.convert_to_tensor(data[0]['pf_points'].reshape(128, 2), tf.float32),
-                tf.convert_to_tensor(data[1]['pf_features'].reshape(128, 17), tf.float32),
-                tf.convert_to_tensor(data[2]['pf_vectors'].reshape(128, 4), tf.float32), 
-                tf.convert_to_tensor(data[3]['pf_mask'].reshape(128, 1), tf.float32),
+                tf.convert_to_tensor(data[0]['pf_features'], tf.float32),
+                tf.convert_to_tensor(data[0]['pf_vectors'], tf.float32), 
+                tf.convert_to_tensor(data[0]['pf_mask'], tf.float32),
                 tf.constant(data[1]['_label_'], dtype=tf.int32))
         #return (tf.convert_to_tensor(data[0]['pf_points'].reshape(1, -1, -1), tf.float32), tf.constant(data[1]['_label_'], dtype=tf.int32))
         #return (tf.convert_to_tensor(data[0]['pf_points'].reshape(1, -1, -1), tf.float32), tf.constant(data[1]['_label_'], dtype=tf.int32))
