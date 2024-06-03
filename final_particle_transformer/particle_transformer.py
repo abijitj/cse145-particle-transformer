@@ -82,7 +82,6 @@ class ParticleTransformer(k.Model):
     
     # def call(self, x, v=None, mask=None, uu=None, uu_idx=None, training=False):
     def call(self, inputs, v=None, mask=None, uu=None, uu_idx=None, training=False):
-    # def call(self, x, mask, v=None, uu=None, uu_idx=None, training=False):
         """
             x: (N, C, P) 
             v: (N, 4, P) [px,py,pz,energy]
