@@ -77,8 +77,12 @@ After simulating and training the NanoGPT model, we translate the nanoGPT from P
 
 
 ### 3. Apply Transformation on Building Particle Transformer Model
-Then we begin to do the translation on the particle transformer model from [weaver-core repo](https://github.com/hqucms/weaver-core/blob/main/weaver/nn/model/ParticleTransformer.py). 
-...
+In this section we begin to do the translation on the particle transformer model from [weaver-core repo](https://github.com/hqucms/weaver-core/blob/main/weaver/nn/model/ParticleTransformer.py). We implementing the data loadar, embedded layers, particle multi-head attention blocks, and class attention blocks in parallel, simulate the attendtion block structure as the NanoGPT that we've done in the section 2, and adding the particle transformer features. According to the [Particle Transformer paper](https://arxiv.org/pdf/2202.03772) the feature matrix `U` is a pair matrix that has three dimensions `(N, N, C')`, and instead of feeding one embedded layer to each particle multi-head attention blocks, we feed two embedded layers: particle layer and interactive U layer.
+
+We first make sure the Keras works on the model, then continue translate them to QKeras and try to maintain the accuracy of training.
+
+Finally we got our model run:
+[images]
 
 
 #### Pytorch to Keras and QKeras translations
