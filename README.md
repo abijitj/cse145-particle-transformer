@@ -7,7 +7,21 @@ This repo contains a project that is working towards building a quantized and mo
  - Andrew Masek [amasek@ucsd.edu](amasek@ucsd.edu)
  - Juan Yin [j9yin@ucsd.edu](j9yin@ucsd.edu)
 
-#  Abstract & Introduction
+# Documentations
+All documentations are contained in the `cse145-particle-transformer/Documentations` directory, the directory contents are:
+- `presentations/`: all presentations of the project 
+- `reports/`: all reports of the project
+- `CITATION.cff`: citation file of Particle Transformer
+- `requirements.txt`: a compatible list containing different libraries used for the project
+
+All test files are contained in the `cse145-particle-transformer/test` directory, which records the previous try on how to load data from the dataset, you could ignore that.
+
+All updated version of the Particle Transformer we implemented using the TensorFlow library is contained in the  `cse145-particle-transformer/final_particle_transformer/` directory, you can find the train.py file there.
+
+
+
+
+# Abstract & Introduction
 Running large machine learning models on the edge at the Large Hadron Collider is a challenging task because of the limited computing available and the time constraints. Existing models are often too large and therefore take a lot of memory to process and time to process the data. One method to get around this problem is to quantize existing models and use FPGAs (as opposed to general-purpose GPUs) for faster and more specialized processing. Our project aims to quantize an existing Particle Transformer model from PyTorch to QKeras. This new quantized model can then be implemented on an FPGA using the DeepSoCFlow library. We hope to maintain similar accuracy levels but achieve faster inference time. 
 
 # How to run Quantized Particle Transformer
@@ -15,7 +29,7 @@ Running large machine learning models on the edge at the Large Hadron Collider i
 Quantized Particle Transformer need to run in particular environments. To do this we have included a requirements.txt file that contains the required environment that can be used for preprocessing and postprocessing for your Quantized Particle Transformer run.
 The run syntax is as follows:
 ```
-pip install -r requirements.txt
+pip install -r ./Documentations/requirements.txt
 ```
 
 ## Downloading dataset
@@ -27,7 +41,20 @@ After making sure the environment is correct, we should download our large datas
 ## Training with multi-gpu support
 !! make sure you have CUDA installed in your computer, for our project, we need [cuda version 10.1](https://www.tensorflow.org/install/source#gpu:~:text=11.0-,tensorflow-2.3.0,10.1,-tensorflow-2.2.0) since it is compatible with our TensorFlow version. Using CUDA GPU we could process large datasets through parallel computing, otherwise, it will take about 6+ hours to train the entire dataset.
 
-The QPT model is implemented in Tensorflow instead of Pytorch, so the training is not based on the weaver framework for dataset loading and transformation. After you get CUDA installed, run the training on the JetClass dataset:
+The QPT model is implemented in Tensorflow instead of Pytorch, so the training is not based on the weaver framework for dataset loading and transformation. After you get CUDA installed, make sure you've downloaded the entire dataset and changed the data path in the train.py (check the `train.py` file in the `cse145-particle-transformer/final_particle_transformer/` directory):
+
+`train.py` datapath:
+```
+# line 35
+training_data_root = '/home/particle/particle_transformer/retrain_test_1/JetClass/Pythia/train_100M/'
+```
+to: 
+```
+# line 35
+training_data_root = '[USER_DIR]/[DATA_DIR]/JetClass/Pythia/train_100M/'
+```
+
+Finally, make sure you are in the `cse145-particle-transformer/final_particle_transformer/` directory, and run the command on terminal training on the JetClass dataset:
 ```
 python3 train.py
 ```
