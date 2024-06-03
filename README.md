@@ -62,6 +62,26 @@ python3 train.py
 
 # Technical Materials
 
+## Difference between PT and QPT
+#### Original Particle Transformer:
+
+1. The original Parallel Transformer operates with the default precision, which is 32-bit floating point numbers (FP32). The high precision results in more accurate computations, but it requires more memory and computational resources.
+
+2. It is suitable for training and used to generate high accuracy where there are sufficient resources to handle the computational load.
+However, it is more memory-intensive and slower due to the high precision of calculations.
+
+#### Quantized Particle Transformer:
+
+1. The quantized ParT operates with reduced precision. Lower precision leads to faster computations and reduced memory usage but with a potential trade-off in accuracy.
+
+2. It is faster for training and ideal for inference scenarios where speed and resource efficiency are prioritized, such as deployment on edge devices or in real-time applications(FPGA). It uses less memory and faster computations due to lower precision. And the size of the model is smaller because weights and activations are stored with reduced precision.
+
+#### Key Differences in four aspects:
+1. Precision and Accuracy: Original ParT uses high precision (FP32), leading to higher accuracy, whereas quantized ParT uses lower precision (INT8 or smaller).
+2. Performance and Efficiency: Quantized ParT offers better performance and efficiency in speed and memory usage.
+3. Use Cases: Original ParT is used where accuracy is important, while quantized ParT is used for efficient inference, especially in production conditions. And in order to make it compatible to be implemented in FPGA, quantization is needed.
+4. Model Size: The quantized ParT model is smaller and requires fewer computational resources, making it faster to run, whereas the original ParT model is larger and takes more time to do the computation.
+
 ## Dataset 
 We have a large particle jets dataset used for training and testing by downloading from [website](https://zenodo.org/records/6619768), it is a large dataset with more than 200GB Jets data which takes more then 7 hours to download.
 
