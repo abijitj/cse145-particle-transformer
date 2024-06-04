@@ -21,12 +21,12 @@ if __name__ == '__main__':
         np.random.seed(0)
 
         # Hyperparameters
-        learning_rate = 3e-5
-        batch_size = 16 #192
+        learning_rate = 5e-4
+        batch_size = 96 #192
 
-        epochs = 15
-        steps_per_epoch = 2000
-        validation_steps = 150
+        epochs = 2000
+        steps_per_epoch = 500
+        validation_steps = 70
         
         print(tf.config.list_physical_devices(), device)
 
