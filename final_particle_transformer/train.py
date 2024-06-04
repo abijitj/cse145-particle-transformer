@@ -64,7 +64,7 @@ if __name__ == '__main__':
 
         train_dataset = train_dataloader.map(mapping).batch(batch_size, drop_remainder=True, num_parallel_calls=tf.data.AUTOTUNE)
         # train_dataset = train_dataloader.batch(batch_size, drop_remainder=True, num_parallel_calls=tf.data.AUTOTUNE)
-        validation_dataset = validation_dataloader.map(mapping).batch(batch_size, num_parallel_calls=tf.data.AUTOTUNE)
+        validation_dataset = validation_dataloader.map(mapping).batch(batch_size, drop_remainder=True, num_parallel_calls=tf.data.AUTOTUNE)
         # validation_dataset = validation_dataloader.batch(batch_size, num_parallel_calls=tf.data.AUTOTUNE)
 
         # for i, test in enumerate(train_dataset):  
