@@ -45,7 +45,8 @@ class Head(keras.Model):
         # print("2: K.transpose.shape:", after_transpose.shape)
 
         wei = Q @ after_transpose * q.shape[-1]**-0.5 # (B, T, T)
-        print("3: wei.shape:", wei.shape, "attn_mask.shape: ", attn_mask.shape) 
+        if attn_mask is not None:
+            print("3: wei.shape:", wei.shape, "attn_mask.shape: ", attn_mask.shape) 
         #tril = tf.convert_to_tensor(np.tril(np.ones((T, T), dtype='float_'), 0), dtype=tf.float32)
         #ninf = tf.constant(float('-inf'), dtype=tf.float32)
         #wei = tf.where(tril[:T, :T] == 0, ninf, wei) # (B, T, T)

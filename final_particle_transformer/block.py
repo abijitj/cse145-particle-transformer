@@ -53,7 +53,7 @@ class Block(k.Model):
         # print("8:", x.shape)
         if x_cls is not None:
             # prepend one element for x_cls: -> (batch, 1+seq_len)
-            padding_mask = tf.concat([tf.zeros_like(padding_mask[:, :1]), padding_mask], axis=1)
+            #padding_mask = tf.concat([tf.zeros_like(padding_mask[:, :1]), padding_mask], axis=1)
             
             # class attention: https://arxiv.org/pdf/2103.17239.pdf
             residual = x_cls
