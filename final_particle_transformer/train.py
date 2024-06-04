@@ -3,10 +3,7 @@ from glob import glob
 import numpy as np
 import tensorflow as tf
 import keras as k
-from tqdm import tqdm
-from particle_transformer import ParticleTransformer
-from particle_transformer_tagger import ParticleTransformerTagger
-from embed import Embed 
+from particle_transformer import ParticleTransformer 
 
 from dataloading.dataset import create_tf_dataloader
 import os
@@ -16,17 +13,16 @@ if __name__ == '__main__':
     try:
         device = "/GPU:0" if tf.config.list_physical_devices('GPU') else "/cpu:0"
 
-
         tf.random.set_seed(0)
         np.random.seed(0)
 
         # Hyperparameters
         learning_rate = 3e-5
-        batch_size = 16 #192
+        batch_size = 1 #16 #192
 
-        epochs = 15
-        steps_per_epoch = 2000
-        validation_steps = 150
+        epochs = 1 #15
+        steps_per_epoch = 1 #2000
+        validation_steps = 1 #150
         
         print(tf.config.list_physical_devices(), device)
 
@@ -75,7 +71,7 @@ if __name__ == '__main__':
                 metrics=['accuracy']
             )
             #TODO validation data shouldn't be the same as training data
-            
+
             print("1:")
             model.fit(train_dataset, 
                     epochs=epochs, 
@@ -84,7 +80,10 @@ if __name__ == '__main__':
                     validation_steps=validation_steps, 
                     verbose=1
             )
+            model.summary()
+            model.save('keras_ParT.keras')
             print("2:")
+            
 
     except Exception as e:
         print(e)
