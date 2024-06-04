@@ -6,6 +6,7 @@ import tensorflow as tf
 import keras as k
 from utils import pairwise_lv_fts
 
+# @k.saving.register_keras_serializable(package="ParticleTransformer", name="custom_fn")
 def get_tril_indices(seq_len, offset=0):
     # Create a mask for the lower triangular part of the matrix
     mask = tf.ones((seq_len, seq_len), dtype=tf.int32)
@@ -22,34 +23,46 @@ def get_tril_indices(seq_len, offset=0):
     
     return rows, cols
 
-
+# @k.saving.register_keras_serializable(package="ParticleTransformer")
 class Embed(k.Model):
     def __init__(self, input_dim, dims, normalize_input=True, activation='gelu'):
         super(Embed, self).__init__()
         self.input_bn = k.layers.BatchNormalization() if normalize_input else None
-        self.module_list = []
+        self.module_list = k.Sequential()
 
         for dim in dims:
-            self.module_list.append(k.layers.LayerNormalization())
-            self.module_list.append(k.layers.Dense(dim))
+            self.module_list.add(k.layers.LayerNormalization())
+            self.module_list.add(k.layers.Dense(dim))
             if activation == 'gelu':
-                self.module_list.append(k.layers.Activation(tf.nn.gelu))
+                self.module_list.add(k.layers.Activation(tf.nn.gelu))
             else:
-                self.module_list.append(k.layers.Activation('relu'))
+                self.module_list.add(k.layers.Activation(tf.nn.relu))
             input_dim = dim
 
         self.embed = self.module_list
+
+    def get_config(self): 
+        config = super().get_config()
+        config.update(
+            {
+                "BatchNorm" : self.input_bn, 
+                "Embed_Sequential" : self.embed, 
+            }
+        )
+        return config 
 
     def call(self, x, training=False):
         if self.input_bn is not None:
             # x: (batch, embed_dim, seq_len)
             x = self.input_bn(x, training=training)
             x = tf.transpose(x, perm=[2, 0, 1])  # equivalent to x.permute(2, 0, 1).contiguous()
-            for layer in self.embed:
-                x = layer(x)
+            x = self.embed(x) 
+            # for layer in self.embed:
+            #     x = layer(x)
         # x: (seq_len, batch, embed_dim)
         return x
 
+# @k.saving.register_keras_serializable(package="ParticleTransformer")
 class PairEmbed(tf.keras.Model):
     def __init__(self, pairwise_lv_dim, pairwise_input_dim, dims, remove_self_pair=False, 
                  use_pre_activation_pair=True, mode='sum', normalize_input=True, 
@@ -64,6 +77,8 @@ class PairEmbed(tf.keras.Model):
         self.for_onnx = for_onnx
         self.pairwise_lv_fts = lambda xi, xj: pairwise_lv_fts(xi, xj, num_outputs=pairwise_lv_dim, eps=eps, for_onnx=for_onnx)
         self.out_dim = dims[-1]
+
+        # self.input_layer = k.layers.InputLayer((), batch_size=)
 
         if self.mode == 'concat':
             input_dim = pairwise_lv_dim + pairwise_input_dim
@@ -101,7 +116,17 @@ class PairEmbed(tf.keras.Model):
                 self.fts_embed = self.fts_module_list
         else:
             raise RuntimeError('`mode` can only be `sum` or `concat`')
-    
+        
+    def get_config(self): 
+        config = super().get_config()
+        config.update(
+            {
+                "Embed" : self.embed, 
+                "Fts_Embed" : self.fts_embed, 
+            }
+        )
+        return config 
+
     def call(self, x, uu=None, training=False):
         # x: (batch, v_dim, seq_len)
         # uu: (batch, v_dim, seq_len, seq_len)
@@ -180,22 +205,18 @@ class PairEmbed(tf.keras.Model):
 
         if self.mode == 'concat':
             elements = self.embed(pair_fts)
-            # elements = self.run_layer_list(self.embed, pair_fts, training=training)
         elif self.mode == 'sum':
             # print("10: x.shape:", x.shape)
             if x is None:
                 # print("11: uu.shape: ", uu.shape)
-                #elements = self.run_layer_list(self.fts_embed, uu, training=training)
                 elements = self.fts_embed(uu) 
             elif uu is None:
                 # print("11: x.shape: ", x.shape)
-                # elements = self.run_layer_list(self.embed, x, training=training)
                 elements = self.embed(x)
                 # print("11: elements.shape: ", elements.shape)
             else:
                 # print("11: x.shape: ", x.shape)
                 elements = self.embed(x)
-                # elements = self.run_layer_list(self.embed, x, training=training) + self.run_layer_list(self.fts_embed, uu, training=training)
 
         if self.is_symmetric and not self.for_onnx:
             y = tf.zeros((batch_size, self.out_dim, seq_len, seq_len), dtype=elements.dtype)

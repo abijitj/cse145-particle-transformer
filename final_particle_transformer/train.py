@@ -81,7 +81,7 @@ if __name__ == '__main__':
                     verbose=1
             )
             model.summary()
-            model.save('keras_ParT.keras')
+            # model.save('keras_ParT.tf', save_format="tf")
             print("2:")
             
 

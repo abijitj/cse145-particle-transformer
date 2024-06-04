@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf
 from keras import Model 
 
+# @k.saving.register_keras_serializable(package="ParticleTransformer")
 class SequenceTrimmer(Model):
     """ Sequence Trimmer for Particle Transformer """
 
@@ -10,6 +11,12 @@ class SequenceTrimmer(Model):
         self.enabled = enabled
         self.target = target
         self._counter = 0
+
+    def get_config(self):
+        config = super().get_config()
+        config.update = {
+
+        }
 
     def call(self, x, v=None, mask=None, uu=None):
         # x: (N, C, P)

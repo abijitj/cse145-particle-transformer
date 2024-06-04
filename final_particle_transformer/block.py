@@ -4,6 +4,7 @@ import keras as k
 from multi_head_attention import MultiHeadAttention
 import sys
 
+# @k.saving.register_keras_serializable(package="ParticleTransformer")
 class Block(k.Model):
     """ Block for Particle Transformer (both Particle Attention and Class Attention) """
 
@@ -34,6 +35,22 @@ class Block(k.Model):
         
         self.c_attn = self.add_weight(name='c_attn', shape=[num_heads], initializer='ones', trainable=True) if scale_heads else None
         self.w_resid = self.add_weight(name='w_resid', shape=[embed_dim], initializer='ones', trainable=True) if scale_resids else None
+
+    def get_config(self):
+        config = super().get_config()
+        config.update(
+            {
+                "PreAttnNorm" : self.pre_attn_norm,
+                "MultiHeadAttention" : self.attn, 
+                "PostAttnNorm" : self.post_attn_norm, 
+                "PreFCNorm" : self.pre_fc_norm, 
+                "fc1" : self.fc1, 
+                "activation" : self.act,
+                "PostFCNorm" : self.post_fc_norm, 
+                "fc2" : self.fc2
+            }
+        )
+        return config 
 
     def call(self, x, x_cls=None, padding_mask=None, attn_mask=None):
         """

@@ -6,6 +6,7 @@ import keras
 from qkeras import QDense
 import sys
 
+# @keras.saving.register_keras_serializable(package="ParticleTransformer")
 class Head(keras.Model):
     """A single head of attention"""
     def __init__(self, head_size, dropout=0.0): 
@@ -18,6 +19,17 @@ class Head(keras.Model):
         self.value = keras.layers.Dense(head_size, use_bias=False)
         
         self.dropout = keras.layers.Dropout(dropout)
+
+    def get_config(self): 
+        config = super().get_config()
+        config.update( 
+            {
+                "Key" : self.key, 
+                "Query" : self.query, 
+                "Value" : self.value, 
+            }
+        )
+        return config 
 
     def call(self, q, k, v, key_padding_mask=None, attn_mask=None):
         """
@@ -77,6 +89,7 @@ class Head(keras.Model):
         return out 
 
 
+# @keras.saving.register_keras_serializable(package="ParticleTransformer")
 class MultiHeadAttention(keras.Model): 
     """ Multiple heads of attention in parallel """
     def __init__(self, num_heads, head_size, n_embd, dropout=0.0): 
@@ -85,6 +98,16 @@ class MultiHeadAttention(keras.Model):
         # self.proj = QDense(n_embd)
         self.proj = keras.layers.Dense(n_embd)
         self.dropout = keras.layers.Dropout(dropout)
+
+    def get_config(self): 
+        config = super().get_config()
+        config.update(
+            {
+                "Heads" : self.heads, 
+                "Projection" : self.proj, 
+            }
+        )
+        return config 
 
     def call(self, q, k, v, key_padding_mask=None, attn_mask=None):
         # 3d attention mask of size (N * num_heads, T, T) = (128, 128, 128)

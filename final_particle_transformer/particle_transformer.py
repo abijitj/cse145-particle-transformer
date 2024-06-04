@@ -10,6 +10,7 @@ from sequence_trimmer import SequenceTrimmer
 import sys 
 
 
+# @k.saving.register_keras_serializable(package="ParticleTransformer")
 class ParticleTransformer(k.Model):
     def __init__(self,
                  input_dim,
@@ -79,6 +80,22 @@ class ParticleTransformer(k.Model):
 
         #self.mask_transpose = k.layers.Permute((2, 0, 1))
     
+    def get_config(self): 
+        config = super().get_config()
+        config.update(
+            {
+                "Trimmer" : self.trimmer, 
+                "Embed" : self.embed, 
+                "PairEmbed" : self.pair_embed, 
+                "Particle Blocks" : self.blocks,
+                "Class Blocks" : self.cls_blocks, 
+                "Norm" : self.norm,
+                "Sequential" : self.fc
+            }
+        )
+        return config 
+
+
     # def call(self, x, v=None, mask=None, uu=None, uu_idx=None, training=False):
     def call(self, inputs, v=None, mask=None, uu=None, uu_idx=None, training=False):
         """
