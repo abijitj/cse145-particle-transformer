@@ -69,7 +69,7 @@ class Block(k.Model):
             # print("10:", x.shape)
             x = self.pre_attn_norm(x)
             # print("11:", x.shape)  
-            x = self.attn(x, x)
+            x = self.attn(x, x, x, padding_mask=padding_mask, attn_mask=attn_mask)
             # print("9:", x.shape)
         
         # print("7:", x.shape)

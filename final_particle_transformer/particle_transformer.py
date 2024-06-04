@@ -124,7 +124,7 @@ class ParticleTransformer(k.Model):
         if (v is not None or uu is not None) and self.pair_embed is not None:
             attn_mask = self.pair_embed(v, uu)
             attn_mask = tf.reshape(attn_mask, (-1, tf.shape(v)[-1], tf.shape(v)[-1]))
-        
+        print('padding_mask', padding_mask.shape, 'attn_mask', attn_mask.shape, 'x', x.shape)
         # transform
         for i, block in enumerate(self.blocks):
             print(f"Calling particle attention block...{i}", x.shape)
