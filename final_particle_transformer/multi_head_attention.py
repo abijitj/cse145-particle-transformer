@@ -62,7 +62,7 @@ class Head(keras.Model):
         # print("6: v.transpose.shape:", V.shape)
         #out = wei @ V # (B, T, T) @ (B, T, C) -> (B, T, C)
         V = self.value(v)
-        V = tf.transpose(v, perm=[1, 0, 2])
+        V = tf.transpose(V, perm=[1, 0, 2])
         out = wei @ V
         # print("7: out.shape:", out.shape)
         
