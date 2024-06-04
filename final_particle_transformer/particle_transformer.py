@@ -112,18 +112,16 @@ class ParticleTransformer(k.Model):
         # with torch.cuda.amp.autocast(enabled=self.use_amp):
 
         # input embedding
-        # print("Before embed", x.shape)
         x = self.embed(x)
-        # print(x.shape, mask.shape)
+        print("1: x.shape: ", x.shape, "mask.shape: ", mask.shape)
         mask_permute = tf.transpose(~mask, perm=(2,0,1))
-        # print(x.shape, mask_permute.shape)
-        x = tf.where(mask_permute, x, 0) 
-        # print("After embed", x.shape) # (P, N, C) 
+        x = tf.where(mask_permute, x, 0)  # (P, N, C)
+        print("2: x.shape: ", x.shape, "mask.shape: ", mask.shape)
 
         attn_mask = None
         if (v is not None or uu is not None) and self.pair_embed is not None:
             attn_mask = self.pair_embed(v, uu)
-            attn_mask = tf.reshape(attn_mask, (-1, tf.shape(v)[-1], tf.shape(v)[-1]))
+            attn_mask = tf.reshape(attn_mask, (-1, tf.shape(v)[-1], tf.shape(v)[-1])) # (N*num_heads, P, P)
         print('padding_mask', padding_mask.shape, 'attn_mask', attn_mask.shape, 'x', x.shape)
         # transform
         for i, block in enumerate(self.blocks):

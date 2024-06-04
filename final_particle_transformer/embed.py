@@ -74,7 +74,7 @@ class PairEmbed(tf.keras.Model):
                 if i < len(dims) - 1: 
                     self.module_list.add(k.layers.Activation(tf.nn.gelu if activation == 'gelu' else 'relu'))
                 input_dim = dim
-            self.embed = k.models.Sequential(self.module_list)
+            self.embed = self.module_list
         elif self.mode == 'sum':
             if pairwise_lv_dim > 0:
                 print("hello1") 
@@ -102,12 +102,12 @@ class PairEmbed(tf.keras.Model):
         else:
             raise RuntimeError('`mode` can only be `sum` or `concat`')
     
-    def run_layer_list(self, layer_list, layer_input, training=True):
-        print(len(layer_list))
-        intermediate = layer_input
-        for layer in layer_list:
-            intermediate = layer(intermediate)
-        return intermediate
+    # def run_layer_list(self, layer_list, layer_input, training=True):
+    #     print(len(layer_list))
+    #     intermediate = layer_input
+    #     for layer in layer_list:
+    #         intermediate = layer(intermediate)
+    #     return intermediate
 
     def call(self, x, uu=None, training=False):
         # x: (batch, v_dim, seq_len)
@@ -124,7 +124,7 @@ class PairEmbed(tf.keras.Model):
 
         if self.is_symmetric and not self.for_onnx:
             i, j = get_tril_indices(seq_len, offset=-1 if self.remove_self_pair else 0)               
-            print("1: x.shape:", x.shape)
+            # print("1: x.shape:", x.shape)
             if x is not None:
                 
                 # expand the dimensions and repeat along the last axis 
@@ -132,7 +132,7 @@ class PairEmbed(tf.keras.Model):
 
                 # xi = x[:, :, i, j]  # (batch, dim, seq_len*(seq_len+1)/2)
                 # xj = x[:, :, j, i]
-                print("2: x.shape:", x.shape) # (16, 4, 128, 128)
+                # print("2: x.shape:", x.shape) # (16, 4, 128, 128)
 
                 # prepare indices for tf.gather_nd
                 batch_dim = tf.range(tf.shape(x)[0], dtype=tf.int64)[:, None, None]
@@ -156,23 +156,23 @@ class PairEmbed(tf.keras.Model):
                 xi = tf.gather_nd(x, full_i_idx)
                 xj = tf.gather_nd(x, full_j_idx)
 
-                print("3: xi.shape:", xi.shape, " xj.shape:", xj.shape)
+                # print("3: xi.shape:", xi.shape, " xj.shape:", xj.shape)
                 x = self.pairwise_lv_fts(xi, xj)
-                print("4: x.shape:", x.shape)
+                # print("4: x.shape:", x.shape)
             if uu is not None:
                 uu = tf.gather(uu, i, axis=2)
         else:
             if x is not None:
-                print("5: x.shape:", x.shape)
+                # print("5: x.shape:", x.shape)
                 x = self.pairwise_lv_fts(tf.expand_dims(x, -1), tf.expand_dims(x, -2))
                 if self.remove_self_pair:
                     i = tf.range(seq_len)
-                    print("6: x.shape:", x.shape)
+                    # print("6: x.shape:", x.shape)
                     x = tf.tensor_scatter_nd_update(x, tf.stack((i, i), axis=-1), tf.zeros_like(i))
-                    print("7: x.shape:", x.shape)
-                print("8: x.shape:", x.shape)
+                    # print("7: x.shape:", x.shape)
+                # print("8: x.shape:", x.shape)
                 x = tf.reshape(x, (-1, self.pairwise_lv_dim, seq_len * seq_len))
-                print("9: x.shape:", x.shape)
+                # print("9: x.shape:", x.shape)
             if uu is not None:
                 uu = tf.reshape(uu, (-1, self.pairwise_input_dim, seq_len * seq_len))
         if self.mode == 'concat': 
@@ -195,10 +195,10 @@ class PairEmbed(tf.keras.Model):
                 #elements = self.run_layer_list(self.fts_embed, uu, training=training)
                 elements = self.fts_embed(uu) 
             elif uu is None:
-                print("11: x.shape: ", x.shape)
+                # print("11: x.shape: ", x.shape)
                 # elements = self.run_layer_list(self.embed, x, training=training)
                 elements = self.embed(x)
-                print("11: elements.shape: ", elements.shape)
+                # print("11: elements.shape: ", elements.shape)
             else:
                 # print("11: x.shape: ", x.shape)
                 elements = self.embed(x)

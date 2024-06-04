@@ -76,7 +76,7 @@ if __name__ == '__main__':
         #     if i == 5: 
         #         break
 
-        model = ParticleTransformer((128, 2), num_classes=10)
+        model = ParticleTransformer((17, 128), num_classes=10)
 
         for layer in model.layers:
             print(layer.name, layer.trainable)

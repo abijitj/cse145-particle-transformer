@@ -11,15 +11,12 @@ class Head(keras.Model):
     def __init__(self, head_size, dropout=0.0): 
         super().__init__()
         self.key = QDense(head_size, use_bias=False)
-
-        #self.transpose = keras.layers.Permute((2, 1))
-
         self.query = QDense(head_size, use_bias=False)
         self.value = QDense(head_size, use_bias=False)
         
         self.dropout = keras.layers.Dropout(dropout)
 
-    def call(self, q, k, v, padding_mask=None, attn_mask=None):
+    def call(self, q, k, v, key_padding_mask=None, attn_mask=None):
         """
         Inputs: 
             q: (T, B, C)
@@ -28,10 +25,11 @@ class Head(keras.Model):
         Returns: 
             out: ...
         """
-        print('padding_mask_val', padding_mask, 'attn_mask_val', attn_mask)
+        print('padding_mask_val', key_padding_mask, 'attn_mask_val', attn_mask)
         # (T, B, C) = (# of particles, batch_size, # features)
-        zero_val = tf.constant(0, dtype=tf.float32)
-        k = tf.where(padding_mask, zero_val, k)
+        if key_padding_mask is not None: 
+            zero_val = tf.constant(0, dtype=tf.float32)
+            k = tf.where(key_padding_mask, zero_val, k)
         K = self.key(k) # (T, B, head_size)
         Q = self.query(q) # (T, B, head_size)
 
@@ -47,11 +45,12 @@ class Head(keras.Model):
         # print("2: K.transpose.shape:", after_transpose.shape)
 
         wei = Q @ after_transpose * q.shape[-1]**-0.5 # (B, T, T)
-        # print("3: wei.shape:", wei.shape) 
+        print("3: wei.shape:", wei.shape, "attn_mask.shape: ", attn_mask.shape) 
         #tril = tf.convert_to_tensor(np.tril(np.ones((T, T), dtype='float_'), 0), dtype=tf.float32)
         #ninf = tf.constant(float('-inf'), dtype=tf.float32)
         #wei = tf.where(tril[:T, :T] == 0, ninf, wei) # (B, T, T)
-        wei += attn_mask
+        if attn_mask is not None: 
+            wei += attn_mask
         wei = keras.activations.softmax(wei) # (B, T, T)
         wei = self.dropout(wei)
         # perform weighted aggregation of the values
@@ -62,6 +61,7 @@ class Head(keras.Model):
         # print("6: v.transpose.shape:", V.shape)
         #out = wei @ V # (B, T, T) @ (B, T, C) -> (B, T, C)
         V = self.value(v)
+        V = tf.transpose(v, perm=[1, 0, 2])
         out = wei @ V
         # print("7: out.shape:", out.shape)
         
@@ -80,9 +80,14 @@ class MultiHeadAttention(keras.Model):
         self.proj = QDense(n_embd)
         self.dropout = keras.layers.Dropout(dropout)
 
-    def call(self, q, k, v, padding_mask=None, attn_mask=None):
-        out = keras.layers.concatenate([h(q, k, v, padding_mask, attn_mask) for h in self.heads], axis=-1)
+    def call(self, q, k, v, key_padding_mask=None, attn_mask=None):
+        # 3d attention mask of size (N * num_heads, T, T) = (128, 128, 128)
+        # assume key_padding_mask is always provided...
+        batch_size = tf.shape(q)[1]
+        if attn_mask is not None: 
+            out = keras.layers.concatenate([h(q, k, v, key_padding_mask, attn_mask[i:i+batch_size]) for i, h in enumerate(self.heads)], axis=-1)
+        else: 
+            out = keras.layers.concatenate([h(q, k, v, key_padding_mask) for h in self.heads], axis=-1)    
         out = self.dropout(self.proj(out))
         
-        # print("1: out.shape:", out.shape)
         return out

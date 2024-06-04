@@ -62,14 +62,14 @@ class Block(k.Model):
             u = self.pre_attn_norm(u)   
 
             # (1, batch, embed_dim)
-            x = self.attn(x_cls, u) #TODO: May need to implement padding and attn masks
+            x = self.attn(x_cls, u, u, key_padding_mask=padding_mask) #TODO: May need to implement padding and attn masks
             x = x[:1]  # Extract the class token part
         else:
             residual = x
             # print("10:", x.shape)
             x = self.pre_attn_norm(x)
             # print("11:", x.shape)  
-            x = self.attn(x, x, x, padding_mask=padding_mask, attn_mask=attn_mask)
+            x = self.attn(x, x, x, key_padding_mask=padding_mask, attn_mask=attn_mask)
             # print("9:", x.shape)
         
         # print("7:", x.shape)
