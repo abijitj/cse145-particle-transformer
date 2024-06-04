@@ -63,6 +63,9 @@ python3 train.py
 # Technical Materials
 
 ## Difference between PT and QPT
+![image](https://github.com/abijitj/cse145-particle-transformer/assets/79886525/1b1f33ae-2de7-4095-a43d-c180361121eb)
+*image from this [website](https://medium.com/@jan_marcel_kezmann/master-the-art-of-quantization-a-practical-guide-e74d7aad24f9)
+
 #### Original Particle Transformer:
 
 1. The original Parallel Transformer operates with the default precision, which is 32-bit floating point numbers (FP32). The high precision results in more accurate computations, but it requires more memory and computational resources.
