@@ -102,13 +102,6 @@ class PairEmbed(tf.keras.Model):
         else:
             raise RuntimeError('`mode` can only be `sum` or `concat`')
     
-    # def run_layer_list(self, layer_list, layer_input, training=True):
-    #     print(len(layer_list))
-    #     intermediate = layer_input
-    #     for layer in layer_list:
-    #         intermediate = layer(intermediate)
-    #     return intermediate
-
     def call(self, x, uu=None, training=False):
         # x: (batch, v_dim, seq_len)
         # uu: (batch, v_dim, seq_len, seq_len)
@@ -158,7 +151,7 @@ class PairEmbed(tf.keras.Model):
 
                 # print("3: xi.shape:", xi.shape, " xj.shape:", xj.shape)
                 x = self.pairwise_lv_fts(xi, xj)
-                # print("4: x.shape:", x.shape)
+                # print("4: x.shape:", x.shape, x.dtype)
             if uu is not None:
                 uu = tf.gather(uu, i, axis=2)
         else:

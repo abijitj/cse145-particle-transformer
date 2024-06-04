@@ -10,9 +10,12 @@ class Head(keras.Model):
     """A single head of attention"""
     def __init__(self, head_size, dropout=0.0): 
         super().__init__()
-        self.key = QDense(head_size, use_bias=False)
-        self.query = QDense(head_size, use_bias=False)
-        self.value = QDense(head_size, use_bias=False)
+        # self.key = QDense(head_size, use_bias=False)
+        self.key = keras.layers.Dense(head_size, use_bias=False)
+        # self.query = QDense(head_size, use_bias=False)
+        self.query = keras.layers.Dense(head_size, use_bias=False)
+        # self.value = QDense(head_size, use_bias=False)
+        self.value = keras.layers.Dense(head_size, use_bias=False)
         
         self.dropout = keras.layers.Dropout(dropout)
 
@@ -29,6 +32,7 @@ class Head(keras.Model):
         # (T, B, C) = (# of particles, batch_size, # features)
         if key_padding_mask is not None: 
             zero_val = tf.constant(0, dtype=tf.float32)
+            print("10: padding_mask.shape: ", key_padding_mask.shape, "k.shape: ", k.shape)
             k = tf.where(key_padding_mask, zero_val, k)
         K = self.key(k) # (T, B, head_size)
         Q = self.query(q) # (T, B, head_size)
@@ -45,8 +49,8 @@ class Head(keras.Model):
         # print("2: K.transpose.shape:", after_transpose.shape)
 
         wei = Q @ after_transpose * q.shape[-1]**-0.5 # (B, T, T)
-        if attn_mask is not None:
-            print("3: wei.shape:", wei.shape, "attn_mask.shape: ", attn_mask.shape) 
+        # if attn_mask is not None:
+        #     print("3: wei.shape:", wei.shape, "attn_mask.shape: ", attn_mask.shape) 
         #tril = tf.convert_to_tensor(np.tril(np.ones((T, T), dtype='float_'), 0), dtype=tf.float32)
         #ninf = tf.constant(float('-inf'), dtype=tf.float32)
         #wei = tf.where(tril[:T, :T] == 0, ninf, wei) # (B, T, T)
@@ -78,7 +82,8 @@ class MultiHeadAttention(keras.Model):
     def __init__(self, num_heads, head_size, n_embd, dropout=0.0): 
         super().__init__()
         self.heads = [Head(head_size) for _ in range(num_heads)]
-        self.proj = QDense(n_embd)
+        # self.proj = QDense(n_embd)
+        self.proj = keras.layers.Dense(n_embd)
         self.dropout = keras.layers.Dropout(dropout)
 
     def call(self, q, k, v, key_padding_mask=None, attn_mask=None):
