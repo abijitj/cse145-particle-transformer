@@ -96,7 +96,7 @@ if __name__ == '__main__':
                     epochs=epochs, 
                     steps_per_epoch=steps_per_epoch, 
                     validation_data=validation_dataset, 
-                    validation_steps=10, 
+                    validation_steps=validation_steps, 
                     verbose=1
             )
             print("2:")
