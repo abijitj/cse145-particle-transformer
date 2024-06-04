@@ -102,6 +102,7 @@ if __name__ == '__main__':
             print("2:")
 
     except Exception as e:
+        print(e)
         log_file = open('./error.log', 'w')
         log_file.truncate(0)
         log_file.write(str(e))
