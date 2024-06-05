@@ -11,6 +11,8 @@ class Head(keras.Model):
     """A single head of attention"""
     def __init__(self, head_size, dropout=0.0): 
         super().__init__()
+        self.head_size = head_size
+        self.dropout_rate = dropout
         # self.key = QDense(head_size, use_bias=False)
         self.key = keras.layers.Dense(head_size, use_bias=False)
         # self.query = QDense(head_size, use_bias=False)
@@ -22,16 +24,13 @@ class Head(keras.Model):
 
     def get_config(self): 
         config = super().get_config()
-        config.update( 
-            {
-                "Key" : self.key, 
-                "Query" : self.query, 
-                "Value" : self.value, 
-            }
-        )
+        config.update({
+            "head_size": self.head_size,
+            "dropout": self.dropout_rate
+        })
         return config 
 
-    def call(self, q, k, v, key_padding_mask=None, attn_mask=None):
+    def call(self, q, k, v, key_padding_mask=None, attn_mask=None, training=False):
         """
         Inputs: 
             q: (T, B, C)
@@ -109,7 +108,7 @@ class MultiHeadAttention(keras.Model):
         )
         return config 
 
-    def call(self, q, k, v, key_padding_mask=None, attn_mask=None):
+    def call(self, q, k, v, key_padding_mask=None, attn_mask=None, training=False):
         # 3d attention mask of size (N * num_heads, T, T) = (128, 128, 128)
         # assume key_padding_mask is always provided...
         batch_size = tf.shape(q)[1]

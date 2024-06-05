@@ -52,7 +52,7 @@ class Block(k.Model):
         )
         return config 
 
-    def call(self, x, x_cls=None, padding_mask=None, attn_mask=None):
+    def call(self, x, x_cls=None, padding_mask=None, attn_mask=None, training=False):
         """
         Args:
             x (Tensor): input to the layer of shape `(seq_len, batch, embed_dim)`

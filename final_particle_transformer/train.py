@@ -70,7 +70,6 @@ if __name__ == '__main__':
                 loss=loss_function,
                 metrics=['accuracy']
             )
-            #TODO validation data shouldn't be the same as training data
 
             print("1:")
             model.fit(train_dataset, 
@@ -81,7 +80,7 @@ if __name__ == '__main__':
                     verbose=1
             )
             model.summary()
-            # model.save('keras_ParT.tf', save_format="tf")
+            model.save('keras_ParT.tf', save_format="tf")
             print("2:")
             
 

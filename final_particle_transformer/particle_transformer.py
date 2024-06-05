@@ -82,19 +82,27 @@ class ParticleTransformer(k.Model):
     
     def get_config(self): 
         config = super().get_config()
-        config.update(
-            {
-                "Trimmer" : self.trimmer, 
-                "Embed" : self.embed, 
-                "PairEmbed" : self.pair_embed, 
-                "Particle Blocks" : self.blocks,
-                "Class Blocks" : self.cls_blocks, 
-                "Norm" : self.norm,
-                "Sequential" : self.fc
-            }
-        )
+        config.update({
+            "input_dim": self.input_dim,
+            "num_classes": self.num_classes,
+            "pair_input_dim": self.pair_input_dim,
+            "pair_extra_dim": self.pair_extra_dim,
+            "remove_self_pair": self.remove_self_pair,
+            "use_pre_activation_pair": self.use_pre_activation_pair,
+            "embed_dims": self.embed_dims,
+            "pair_embed_dims": self.pair_embed_dims,
+            "num_heads": self.num_heads,
+            "num_layers": self.num_layers,
+            "num_cls_layers": self.num_cls_layers,
+            "block_params": self.block_params,
+            "cls_block_params": self.cls_block_params,
+            "fc_params": self.fc_params,
+            "activation": self.activation,
+            "trim": self.trim,
+            "for_inference": self.for_inference,
+            "use_amp": self.use_amp
+        })
         return config 
-
 
     # def call(self, x, v=None, mask=None, uu=None, uu_idx=None, training=False):
     def call(self, inputs, v=None, mask=None, uu=None, uu_idx=None, training=False):
@@ -110,7 +118,6 @@ class ParticleTransformer(k.Model):
         mask = inputs[2] # pf_mask 
 
         if not self.for_inference:
-            #print("testing1...")
             if uu_idx is not None:
                 uu = build_sparse_tensor(uu, uu_idx, tf.shape(x)[-1])
             

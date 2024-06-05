@@ -136,9 +136,13 @@ class PairEmbed(tf.keras.Model):
         # --------with torch.no_grad ----------------
 
         if x is not None:
-            batch_size, _, seq_len = x.shape
+            x_shape = tf.shape(x)
+            batch_size, _, seq_len = x_shape[0], x_shape[1], x_shape[2]
+            # batch_size, _, seq_len = tf.shape(x)
         else:
-            batch_size, _, seq_len, _ = uu.shape
+            uu_shape = tf.shape(uu)
+            batch_size, _, seq_len, _ = uu_shape[0], uu_shape[1], uu_shape[2]
+            # batch_size, _, seq_len, _ = tf.shape(uu)
 
         if self.is_symmetric and not self.for_onnx:
             i, j = get_tril_indices(seq_len, offset=-1 if self.remove_self_pair else 0)               
@@ -160,11 +164,11 @@ class PairEmbed(tf.keras.Model):
                 j_idx = tf.reshape(j, (1, 1, -1))
 
                 # Broadcast batch_dim and dim_dim to the correct shape
-                batch_dim = tf.broadcast_to(batch_dim, [batch_size, _, len(i)])
-                dim_dim = tf.broadcast_to(dim_dim, [batch_size, _, len(i)])
+                batch_dim = tf.broadcast_to(batch_dim, [batch_size, _, tf.shape(i)[0]])#len(i)])
+                dim_dim = tf.broadcast_to(dim_dim, [batch_size, _, tf.shape(i)[0]])
 
-                i_broadcast = tf.broadcast_to(i_idx, [batch_size, _, len(i)])
-                j_broadcast = tf.broadcast_to(j_idx, [batch_size, _, len(i)])
+                i_broadcast = tf.broadcast_to(i_idx, [batch_size, _, tf.shape(i)[0]])
+                j_broadcast = tf.broadcast_to(j_idx, [batch_size, _, tf.shape(i)[0]])
 
                 # Create full index arrays 
                 full_i_idx = tf.stack([batch_dim, dim_dim, i_broadcast, j_broadcast], axis=-1)
@@ -230,11 +234,11 @@ class PairEmbed(tf.keras.Model):
             j_idx = tf.reshape(j, (1, 1, -1))
 
             # Broadcast batch_dim and dim_dim to the correct shape
-            batch_dim = tf.broadcast_to(batch_dim, [batch_size, self.out_dim, len(i)])
-            dim_dim = tf.broadcast_to(dim_dim, [batch_size, self.out_dim, len(i)])
+            batch_dim = tf.broadcast_to(batch_dim, [batch_size, self.out_dim, tf.shape(i)[0]])
+            dim_dim = tf.broadcast_to(dim_dim, [batch_size, self.out_dim, tf.shape(i)[0]])
 
-            i_broadcast = tf.broadcast_to(i_idx, [batch_size, self.out_dim, len(i)])
-            j_broadcast = tf.broadcast_to(j_idx, [batch_size, self.out_dim, len(j)])
+            i_broadcast = tf.broadcast_to(i_idx, [batch_size, self.out_dim, tf.shape(i)[0]])
+            j_broadcast = tf.broadcast_to(j_idx, [batch_size, self.out_dim, tf.shape(i)[0]])
 
             # Create full index arrays 
             # print("batch_dim.shape:", batch_dim.shape)
