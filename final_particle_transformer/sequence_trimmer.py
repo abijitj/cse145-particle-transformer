@@ -4,8 +4,69 @@ import tensorflow as tf
 import keras as k 
 from keras import Model 
 
-# def convert_to_numpy(tensor):
-#     return np.array(tensor)
+@tf.function
+def replace_elements(x, maxlen):
+    print('hello29', x.shape, maxlen.shape)
+    # Expand and broadcast maxlen to shape (b, 1, 1)
+    maxlen_expanded = tf.expand_dims(tf.expand_dims(maxlen, axis=1), axis=2)
+    print('hello30', x.shape, maxlen.shape)
+    maxlen_broadcasted = tf.broadcast_to(maxlen_expanded, x.shape)
+
+    # Create a range tensor for the channel dimension
+    channel_range = tf.range(x.shape[2])
+    channel_range = tf.reshape(channel_range, (1, 1, -1))
+
+    # Create a mask where c >= maxlen
+    mask = channel_range >= maxlen_broadcasted
+
+    # Replace the elements in x where mask is True
+    return tf.where(mask, tf.zeros_like(x), x)
+
+@tf.function
+def func(x, v, uu, mask, maxlen):
+    # maxlen_ph = tf.compat.v1.placeholder(tf.int32, shape=(1,))
+    maxlen = tf.cast(maxlen, tf.int32)
+
+    # def x_func(x, v, uu, maxlen): 
+    #mask = mask[:, :, :maxlen]
+    print('hello31', mask.shape)
+    mask = replace_elements(mask, maxlen) 
+    # mask = tf.concat([mask[:, :, :maxlen], tf.zeros_like(mask[:, :, maxlen:])], axis=2)
+    # mask = tf.reshape(mask, (tf.shape(mask)[0], tf.shape(mask)[1], 128))
+
+    print("hello14")
+    #x = x[:, :, :maxlen]
+
+    x = replace_elements(x, maxlen) 
+    # x = tf.concat([x[:, :, :maxlen], tf.zeros_like(x[:, :, maxlen:])], axis=2)
+    # x = tf.reshape(x, (tf.shape(x)[0], tf.shape(x)[1], 128))
+    print("hello15")
+    if v is not None:
+        print("hello16", v.shape)
+        v = replace_elements(v, maxlen) 
+        # v = tf.concat([v[:, :, :maxlen], tf.zeros_like(v[:, :, maxlen:])], axis=2)
+        # v = tf.reshape(v, (tf.shape(v)[0], tf.shape(v)[1], 128))
+        print("hello23", v.shape)
+    #    v = v[:, :, :maxlen]
+    if uu is not None:
+        print("hello17")
+        #x = tf.concat([x[:, :, :maxlen, :maxlen], tf.zeros_like(x[:, :, maxlen:, maxlen:])], axis=2)
+    #    uu = uu[:, :, :maxlen, :maxlen] 
+
+    print("hello13")
+    # with tf.compat.v1.Session() as sess:
+    #     # sess.run()
+    #     # mask = mask[:, :, :maxlen]
+    #     # print("hello14")
+    #     # x = x[:, :, :maxlen]
+    #     # print("hello15")
+    #     # if v is not None:
+    #     #     print("hello16")
+    #     #     v = v[:, :, :maxlen]
+    #     # if uu is not None:
+    #     #     print("hello17")
+    #     #     uu = uu[:, :, :maxlen, :maxlen]
+    return x, v, uu, mask
 
 # @k.saving.register_keras_serializable(package="ParticleTransformer")
 class SequenceTrimmer(Model):
@@ -16,14 +77,12 @@ class SequenceTrimmer(Model):
         self.enabled = enabled
         self.target = target
         self._counter = 0
-        # self.flatten = k.layers.Flatten()
 
     def get_config(self):
         config = super().get_config()
         config.update({
             "enabled" : self.enabled,
             "target" : self.target 
-            # "flatten" : self.flatten
         })
         return config 
 
@@ -62,13 +121,15 @@ class SequenceTrimmer(Model):
         if mask is None:
             mask = tf.ones_like(x[:, :1])
         mask = tf.cast(mask, tf.bool) 
-
+        print('enabled', self.enabled, 'counter', self._counter)
         if self.enabled:
-            if self._counter < 5:
-                self._counter += 1
-            else:
+            #if self._counter < 5:
+            #    self._counter += 1
+            #else:
+
                 if training:
                     q = min(1, np.random.uniform(*self.target))
+                    tf.print()
                     print("hello")
                     # q = tf.convert_to_tensor(q, dtype=tf.float32) 
                     
@@ -78,16 +139,9 @@ class SequenceTrimmer(Model):
                     print("mask.shape: ", mask.shape)
                     # print("q.shape: ", q.shape)
                     mask_sum = tf.reduce_sum(tf.cast(mask, x.dtype), axis=-1)
-                    # q_np = tf.py_function(convert_to_numpy, q, tf.int64)  
                     print("Starting quantile...2")
                     maxlen = self.tf_quantile(mask_sum, q) 
-                    # mask_np = tf.numpy_function(convert_to_numpy, tf.reduce_sum(tf.cast(mask, x.dtype)), tf.int64)
-                    # # mask_np = np.array(tf.reduce_sum(tf.cast(mask, x.dtype)))
                     print("Starting quantile...3")
-                    # maxlen = np.quantile(mask_np, q)
-                    # print("Starting quantile...4")
-                    # maxlen = tf.convert_to_tensor(maxlen, dtype=tf.int64)
-                    # print("Starting quantile...5")
                     #------------------
                     
                     # rand = torch.rand_like(mask.type_as(x))
@@ -98,38 +152,38 @@ class SequenceTrimmer(Model):
                     print("hello3")
 
                     perm = tf.argsort(rand, axis=-1, direction='DESCENDING')  # (N, 1, P)
-                    print("hello4")
-                    mask = tf.gather(mask, perm, batch_dims=1)
-                    print("hello5")
-
-                    x = tf.gather(x, perm, batch_dims=2)
-                    print("hello6")
+                    print("hello4", mask.shape)
+                    mask = tf.gather(mask, perm, batch_dims=2, axis=-1)
+                    print("hello5", x.shape, mask.shape, v.shape)
+                    perm_x = tf.broadcast_to(perm, tf.shape(x))
+                    x = tf.gather(x, perm_x, batch_dims=2, axis=-1)
+                    print("hello6", x.shape)
                     if v is not None:
-                        print("hello7")
-                        v = tf.gather(v, perm, batch_dims=2)
+                        print("hello7", v.shape)
+                        v = tf.gather(v, perm, batch_dims=2, axis=-1)
+                        print('hello32', v.shape)
                     if uu is not None:
                         print("hello8")
-                        uu = tf.gather(uu, perm, batch_dims=2)
+                        # new_perm = tf.expand_dims(perm, axis=-1)
+                        # new_perm = tf.broadcast_to(perm, tf.shape(uu))
+                        uu = tf.gather(uu, tf.broadcast_to(tf.expand_dims(perm, axis=-1), tf.shape(uu)), batch_dims=1, axis=-2)
                         print("hello9")
-                        uu = tf.gather(uu, perm, batch_dims=2)
+                        uu = tf.gather(uu, tf.broadcast_to(tf.expand_dims(perm, axis=-2), tf.shape(uu)), batch_dims=1, axis=-1)
                     print("hello10")
                 else:
+                    mask = tf.cast(mask, tf.int32)
                     maxlen = tf.reduce_max(tf.reduce_sum(mask, axis=-1))
                 print("hello11")
                 print("maxlen type: ", type(maxlen))
-                maxlen = tf.math.maximum(maxlen[0], 1)
+                maxlen = tf.math.maximum(tf.math.round(maxlen), 1)
                 print("hello12")
-                if maxlen < tf.shape(mask)[-1]:
-                    print("hello13")
-                    mask = mask[:, :, :maxlen]
-                    print("hello14")
-                    x = x[:, :, :maxlen]
-                    print("hello15")
-                    if v is not None:
-                        print("hello16")
-                        v = v[:, :, :maxlen]
-                    if uu is not None:
-                        print("hello17")
-                        uu = uu[:, :, :maxlen, :maxlen]
+                true_fn = lambda: func(x, v, uu, mask, maxlen)
+                false_fn = lambda: (x, v, uu, mask)
+
+                print("hello20:", x.shape) 
+                x, v, uu, mask = tf.cond((maxlen < tf.cast(tf.shape(mask)[-1], dtype=tf.float32)), 
+                           true_fn,
+                           false_fn)
+                print("hello18:", x.shape, tf.shape(x), tf.shape(x)[0], tf.shape(x)[1], tf.shape(x)[2]) 
 
         return x, v, mask, uu

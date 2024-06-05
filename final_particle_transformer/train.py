@@ -4,10 +4,12 @@ import numpy as np
 import tensorflow as tf
 import keras as k
 from particle_transformer import ParticleTransformer 
+import traceback 
 
 from dataloading.dataset import create_tf_dataloader
 import os
 
+# tf.compat.v1.disable_eager_execution()
 
 if __name__ == '__main__':
     try:
@@ -17,8 +19,8 @@ if __name__ == '__main__':
         np.random.seed(0)
 
         # Hyperparameters
-        learning_rate = 3e-5 #5e-4
-        batch_size = 1 #16 #192 #96
+        learning_rate = 3e-3 #5e-4
+        batch_size = 96 #16 #192 #96
 
         epochs = 1 #15 #2000
         steps_per_epoch = 1 #2000 #500
@@ -85,7 +87,8 @@ if __name__ == '__main__':
             
 
     except Exception as e:
-        print(e)
+        # print(e)
+        traceback.print_exc()
         log_file = open('./error.log', 'w')
         log_file.truncate(0)
         log_file.write(str(e))

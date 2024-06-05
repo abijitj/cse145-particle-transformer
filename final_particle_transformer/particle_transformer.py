@@ -124,12 +124,15 @@ class ParticleTransformer(k.Model):
             # print("Before sequence trimmer x.shape:", x.shape)
             # print("Before sequence trimmer mask.shape:", mask.shape if mask is not None else "Mask is None")
 
+            print("hello21:", x.shape)
             x, v, mask, uu = self.trimmer(x, v=v, mask=mask, uu=uu)
+            mask = tf.reshape(mask, (tf.shape(x)[0], 1, tf.shape(x)[2])) # (B, 1, 128)
+            v = tf.reshape(v, (tf.shape(x)[0], 4, 128)) # (B, 4, 128)
+            print("hello22:", x.shape, v.shape, mask.shape)
 
             # print("After sequence trimmer x.shape:", x.shape)
             # print("After sequence trimmer mask.shape:", mask.shape if mask is not None else "Mask is None")
 
-            print(mask.shape)
             padding_mask = tf.logical_not(tf.squeeze(mask, axis=1))  # assuming mask is of shape (N, 1, P)
         
         # TODO: mixed precision not added yet
@@ -144,6 +147,7 @@ class ParticleTransformer(k.Model):
 
         attn_mask = None
         if (v is not None or uu is not None) and self.pair_embed is not None:
+            print('hello24', v.shape)
             attn_mask = self.pair_embed(v, uu)
             attn_mask = tf.reshape(attn_mask, (-1, tf.shape(v)[-1], tf.shape(v)[-1])) # (N*num_heads, P, P)
         print('padding_mask', padding_mask.shape, 'attn_mask', attn_mask.shape, 'x', x.shape)

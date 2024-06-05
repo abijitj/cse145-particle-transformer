@@ -55,6 +55,7 @@ class Embed(k.Model):
         if self.input_bn is not None:
             # x: (batch, embed_dim, seq_len)
             x = self.input_bn(x, training=training)
+            print('pretranspose shape', x.shape)
             x = tf.transpose(x, perm=[2, 0, 1])  # equivalent to x.permute(2, 0, 1).contiguous()
             x = self.embed(x) 
             # for layer in self.embed:
@@ -130,7 +131,7 @@ class PairEmbed(tf.keras.Model):
     def call(self, x, uu=None, training=False):
         # x: (batch, v_dim, seq_len)
         # uu: (batch, v_dim, seq_len, seq_len)
-        print(x.shape)
+        print('pe1', x.shape)
         assert (x is not None or uu is not None)
 
         # --------with torch.no_grad ----------------
