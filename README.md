@@ -19,6 +19,8 @@ All documentation is contained in the `cse145-particle-transformer/Documentation
 
 All test files are contained in the `cse145-particle-transformer/test` directory, which records our previous attempts at loading data from the dataset. 
 
+Our keras implementation of nanoGPT is in the `cse145-particle-transformer/nanogpt` directory.
+
 Our Keras implementation of the ParT is contained in the  `cse145-particle-transformer/final_particle_transformer/` directory. You can use the `train.py` file to train this model. Please note, most of the other files are from the original [ParT repo](https://github.com/jet-universe/particle_transformer). As such you can also run the original ParT here by following the instructions in their repo.  
 
 # How to run Quantized Particle Transformer
