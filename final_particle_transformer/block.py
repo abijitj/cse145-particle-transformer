@@ -70,7 +70,7 @@ class Block(k.Model):
         # print("8:", x.shape)
         if x_cls is not None:
             # prepend one element for x_cls: -> (batch, 1+seq_len)
-            #padding_mask = tf.concat([tf.zeros_like(padding_mask[:, :1]), padding_mask], axis=1)
+            # padding_mask = tf.concat([tf.zeros_like(padding_mask[:, :1]), padding_mask], axis=1)
             
             # class attention: https://arxiv.org/pdf/2103.17239.pdf
             residual = x_cls
@@ -79,7 +79,7 @@ class Block(k.Model):
             u = self.pre_attn_norm(u)   
 
             # (1, batch, embed_dim)
-            x = self.attn(x_cls, u, u, key_padding_mask=padding_mask) #TODO: May need to implement padding and attn masks
+            x = self.attn(x_cls, u, u, key_padding_mask=padding_mask)
             x = x[:1]  # Extract the class token part
         else:
             residual = x
