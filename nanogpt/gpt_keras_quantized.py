@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 #import tensorflow.keras as k
-import tensorflow.keras.backend as K
+#import tensorflow.keras.backend as K
 import keras as k
 from tqdm import tqdm
 from qkeras import QDense
@@ -10,15 +10,15 @@ import qkeras
 
 # hyperparameters
 batch_size = 32 # how many independent sequences will we process in parallel?
-block_size = 96 # what is the maximum context length for predictions?
+block_size = 128 # what is the maximum context length for predictions?
 learning_rate = 3e-3 #3e-3
 epochs = 1
-steps_per_epoch = 5
+steps_per_epoch = 40
 device = "/GPU:0" if tf.config.list_physical_devices('GPU') else "/cpu:0"
-eval_iters = 1
-n_embd = 256
+eval_iters = 5
+n_embd = 128
 n_head = 5
-dropout = 0.2
+dropout = 0.15
 n_layer = 5
 
 #RELU_QUANTIZER = "quantized_relu(4)"
@@ -108,19 +108,22 @@ class Head(k.Model):
 
         self.query = QDense(head_size, use_bias=False, kernel_quantizer=f'quantized_bits({bit_width},0,1)')
         self.value = QDense(head_size, use_bias=False, kernel_quantizer=f'quantized_bits({bit_width},0,1)')
-        
+        self.quantized_bits_activation = qkeras.quantizers.quantized_bits(bit_width, 0, 1)
         self.dropout = k.layers.Dropout(dropout)
 
     def call(self, x):
         B, T, C = x.shape
         K = self.key(x) # (B, T, C)
+        K = self.quantized_bits_activation(K)
         #print(K.shape, x.shape, 'K')
         q = self.query(x) # (B, T, C)
+        q = self.quantized_bits_activation(q)
+        
 
         # compute attention scores ("affinities")
         wei = q @ self.transpose(K) * C**-0.5 # (B, T, C)
+        wei = self.quantized_bits_activation(wei)
 
-        wei = qkeras.quantizers.quantized_bits(4, 0, 1)(wei)
         #wei = wei.masked_fill(self.tril[:T, :T] == 0, float('-inf')) # (B, T, T)
         tril = tf.convert_to_tensor(np.tril(np.ones((T, T), dtype='float_'), 0), dtype=tf.float32)
         ninf = tf.constant(float('-inf'), dtype=tf.float32)
@@ -129,7 +132,9 @@ class Head(k.Model):
         wei = self.dropout(wei)
         # perform weighted aggregation of the values
         v = self.value(x)
+        v = self.quantized_bits_activation(v)
         out = wei @ v # (B, T, T) @ (B, T, C) -> (B, T, C)
+        out = self.quantized_bits_activation(out)
         return out 
 
 
@@ -142,10 +147,12 @@ class MultiHeadAttention(k.Model):
         self.heads = [Head(head_size, bit_width) for _ in range(num_heads)]
         self.proj = QDense(n_embd, kernel_quantizer=f'quantized_bits({bit_width},0,1)', bias_quantizer=f'quantized_bits({bit_width},0,1)')
         self.dropout = k.layers.Dropout(dropout)
+        self.quantized_bits_activation = qkeras.quantizers.quantized_bits(bit_width, 0, 1)
 
     def call(self, x):
         out = k.layers.concatenate([h(x) for h in self.heads], axis=-1)
         out = self.dropout(self.proj(out))
+        out = self.quantized_bits_activation(out)
         return out
 
 
@@ -159,10 +166,11 @@ class FeedForward(k.Model):
         #self.relu = k.layers.Activation('relu')
         self.l2 = QDense(n_embd, kernel_quantizer=f'quantized_bits({bit_width},0,1)', bias_quantizer=f'quantized_bits({bit_width},0,1)')
         self.dropout = k.layers.Dropout(dropout)
+        self.quantized_bits_activation = qkeras.quantizers.quantized_bits(bit_width, 0, 1)
     
     def call(self, x): 
-        x = self.l1(x)
-        x = self.dropout(self.l2(x))
+        x = self.quantized_bits_activation(self.l1(x))
+        x = self.quantized_bits_activation(self.dropout(self.l2(x)))
         return x
 
 
@@ -178,10 +186,11 @@ class Block(k.Model):
         self.ffwd = FeedForward(n_embd, bit_width)
         self.ln1 = k.layers.LayerNormalization()
         self.ln2 = k.layers.LayerNormalization()
+        self.quantized_bits_activation = qkeras.quantizers.quantized_bits(bit_width, 0, 1)
     
     def call(self, x):
-        x = x + self.sa(self.ln1(x))
-        x = x + self.ffwd(self.ln2(x))
+        x = x + self.quantized_bits_activation(self.sa(self.ln1(x)))
+        x = x + self.ffwd(self.quantized_bits_activation(self.ln2(x)))
         #x = x + self.ln1(x)
         return x
     
@@ -198,21 +207,24 @@ class GPTModel(k.Model):
         self.token_embedding_table = k.layers.Embedding(vocab_size, n_embd)
         self.position_embedding_table = k.layers.Embedding(block_size, n_embd)
         self.blocks = [Block(n_embd, n_head, bit_width) for _ in range(n_layer)]
-        self.ln_f = k.layers.LayerNormalization(n_embd) # final layer norm
         self.lm_head = QDense(vocab_size, kernel_quantizer = f'quantized_bits({bit_width},0,1)', bias_quantizer = f'quantized_bits({bit_width},0,1)')
-    
+        self.quantized_bits_activation = qkeras.quantizers.quantized_bits(bit_width, 0, 1)
+
     def call(self, idx, training=True, targets=None): 
         B, T = idx.shape
 
         # idx and targets are both (B,T) tensor of integers
         tok_emb = self.token_embedding_table(idx) # (B,T,C)
+        tok_emb = self.quantized_bits_activation(tok_emb)
         pos_emb = self.position_embedding_table(np.arange(T))#, device=device)) # (T,C)
+        pos_emb = self.quantized_bits_activation(pos_emb)
         x = tok_emb + pos_emb
 
         for block in self.blocks:
             x = block(x)
         
         logits = self.lm_head(x) # (B,T,vocab_size)
+        logits = self.quantized_bits_activation(logits)
         if targets is None:
             #B, T, C = logits.shape
             #logits = tf.reshape(logits, (B*T, C))
@@ -268,7 +280,7 @@ plt.ion()
 plt.pause(1)
 
 
-for bit_width in range(2, 6):
+for bit_width in range(3, 17):
     model = GPTModel(bit_width)
 
     with tf.device(device):
