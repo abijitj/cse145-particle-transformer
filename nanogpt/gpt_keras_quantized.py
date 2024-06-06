@@ -95,8 +95,8 @@ def estimate_loss():
     
     return out
 
-
-class Head(k.Model):
+@k.saving.register_keras_serializable()
+class Head(k.layers.Layer):
     def build(self, input_shape):
         pass
     def __init__(self, head_size, bit_width):
@@ -137,8 +137,8 @@ class Head(k.Model):
         out = self.quantized_bits_activation(out)
         return out 
 
-
-class MultiHeadAttention(k.Model): 
+@k.saving.register_keras_serializable()
+class MultiHeadAttention(k.layers.Layer): 
     """ multiple heads of self-attention in parallel """
     def build(self, input_shape):
         pass
@@ -154,9 +154,8 @@ class MultiHeadAttention(k.Model):
         out = self.dropout(self.proj(out))
         out = self.quantized_bits_activation(out)
         return out
-
-
-class FeedForward(k.Model):
+@k.saving.register_keras_serializable()
+class FeedForward(k.layers.Layer):
     """ a simple linear layer followed by a non-linearity """
     def build(self, input_shape):
         pass
@@ -173,8 +172,8 @@ class FeedForward(k.Model):
         x = self.quantized_bits_activation(self.dropout(self.l2(x)))
         return x
 
-
-class Block(k.Model): 
+@k.saving.register_keras_serializable()
+class Block(k.layers.Layer): 
     """ Transformer block: communication followed by computation """
     def build(self, input_shape):
         pass
@@ -194,8 +193,8 @@ class Block(k.Model):
         #x = x + self.ln1(x)
         return x
     
-
-class GPTModel(k.Model): 
+@k.saving.register_keras_serializable()
+class GPTModel(k.layers.Layer): 
     """ GPT Decoder-only Model """
     def build(self, input_shape):
         pass
@@ -281,20 +280,25 @@ plt.pause(1)
 
 
 for bit_width in range(3, 17):
-    model = GPTModel(bit_width)
+    
 
     with tf.device(device):
         #loss = k.losses.CategoricalCrossentropy(from_logits=True, label_smoothing=1)
         loss_function = k.losses.SparseCategoricalCrossentropy(from_logits=True)
         # loss = tf.nn.softmax_cross_entropy_with_logits
+        
+
+        x, y = get_training_data()
+        model_y = GPTModel(bit_width)(x)
+
+        model = k.Model(inputs=x, outputs=model_y)
         model.compile(
             run_eagerly=True,
             optimizer=k.optimizers.Adam(learning_rate=learning_rate),
             loss=loss_function
         )
-
-        x, y = get_training_data()
         print(x.numpy().shape, y.numpy().shape)
+        
 
         model.fit(x, y, epochs=epochs, batch_size=batch_size, steps_per_epoch=steps_per_epoch, validation_split=.2, validation_batch_size=batch_size, validation_steps=10)
 
