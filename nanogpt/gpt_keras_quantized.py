@@ -1,9 +1,12 @@
 import numpy as np
 import tensorflow as tf
 #import tensorflow.keras as k
+import tensorflow.keras.backend as K
 import keras as k
 from tqdm import tqdm
+from qkeras import QDense
 import matplotlib.pyplot as plt
+import qkeras
 
 # hyperparameters
 batch_size = 32 # how many independent sequences will we process in parallel?
@@ -11,13 +14,17 @@ block_size = 96 # what is the maximum context length for predictions?
 eval_interval = 200
 learning_rate = 1e-3 #3e-3
 epochs = 1
-steps_per_epoch = 1
+steps_per_epoch = 250
 device = "/GPU:0" if tf.config.list_physical_devices('GPU') else "/cpu:0"
 eval_iters = 1
 n_embd = 256
 n_head = 5
 dropout = 0.2
 n_layer = 5
+
+RELU_QUANTIZER = "quantized_relu(4)"
+KERNEL_QUANTIZER = "quantized_bits(4,0,1)"
+BIAS_QUANTIZER = "quantized_bits(4,0,1)"
 
 tf.random.set_seed(0)
 # ------------
@@ -95,13 +102,13 @@ class Head(k.Model):
         pass
     def __init__(self, head_size): 
         super().__init__()
-        self.key = k.layers.Dense(head_size, use_bias=False)
+        self.key = QDense(head_size, use_bias=False, kernel_quantizer=KERNEL_QUANTIZER)
         #print('hs', head_size)
 
         self.transpose = k.layers.Permute((2, 1))
 
-        self.query = k.layers.Dense(head_size, use_bias=False)
-        self.value = k.layers.Dense(head_size, use_bias=False)
+        self.query = QDense(head_size, use_bias=False, kernel_quantizer=KERNEL_QUANTIZER)
+        self.value = QDense(head_size, use_bias=False, kernel_quantizer=KERNEL_QUANTIZER)
         
         self.dropout = k.layers.Dropout(dropout)
 
@@ -114,6 +121,8 @@ class Head(k.Model):
         # compute attention scores ("affinities")
         wei = q @ self.transpose(K) * C**-0.5 # (B, T, C)
         
+        #wei = qkeras.quantizers.quantized_bits(4, 0, 1)(wei)
+        #wei = wei.masked_fill(self.tril[:T, :T] == 0, float('-inf')) # (B, T, T)
         tril = tf.convert_to_tensor(np.tril(np.ones((T, T), dtype='float_'), 0), dtype=tf.float32)
         ninf = tf.constant(float('-inf'), dtype=tf.float32)
         wei = tf.where(tril[:T, :T] == 0, ninf, wei) # (B, T, T)
@@ -132,7 +141,7 @@ class MultiHeadAttention(k.Model):
     def __init__(self, num_heads, head_size): 
         super().__init__()
         self.heads = [Head(head_size) for _ in range(num_heads)]
-        self.proj = k.layers.Dense(n_embd)
+        self.proj = QDense(n_embd, kernel_quantizer=KERNEL_QUANTIZER, bias_quantizer=BIAS_QUANTIZER)
         self.dropout = k.layers.Dropout(dropout)
 
     def call(self, x):
@@ -147,9 +156,9 @@ class FeedForward(k.Model):
         pass
     def __init__(self, n_embd): 
         super().__init__()
-        self.l1 = k.layers.Dense(4 * n_embd)
+        self.l1 = QDense(4 * n_embd, kernel_quantizer=RELU_QUANTIZER, bias_quantizer=BIAS_QUANTIZER)
         #self.relu = k.layers.Activation('relu')
-        self.l2 = k.layers.Dense(n_embd)
+        self.l2 = QDense(n_embd, kernel_quantizer=KERNEL_QUANTIZER, bias_quantizer=BIAS_QUANTIZER)
         self.dropout = k.layers.Dropout(dropout)
     
     def call(self, x): 
@@ -191,7 +200,7 @@ class GPTModel(k.Model):
         self.position_embedding_table = k.layers.Embedding(block_size, n_embd)
         self.blocks = [Block(n_embd, n_head) for _ in range(n_layer)]
         self.ln_f = k.layers.LayerNormalization(n_embd) # final layer norm
-        self.lm_head = k.layers.Dense(vocab_size)
+        self.lm_head = QDense(vocab_size, kernel_quantizer = KERNEL_QUANTIZER, bias_quantizer = BIAS_QUANTIZER)
     
     def call(self, idx, training=True, targets=None): 
         B, T = idx.shape
@@ -249,38 +258,62 @@ class GPTModel(k.Model):
         return idx
 
 
-model = GPTModel()
 
-with tf.device(device):
-    #loss = k.losses.CategoricalCrossentropy(from_logits=True, label_smoothing=1)
-    loss_function = k.losses.SparseCategoricalCrossentropy(from_logits=True)
-    # loss = tf.nn.softmax_cross_entropy_with_logits
-    model.compile(
-        run_eagerly=True,
-        optimizer=k.optimizers.Adam(learning_rate=learning_rate),
-        loss=loss_function
-    )
+bit_width_results = {}
+fig = plt.figure()
+#fig.clear()
+graph = fig.add_subplot(111)
 
-    x, y = get_training_data()
-    # for iter in tqdm(range(max_iters)):
-    #     # every once in a while evaluate the loss on train and val sets
-    #     if iter % eval_interval == 0:
-    #         losses = estimate_loss()
-    #         print(f"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
+graph.plot([0], [0])
+plt.ion()
+plt.pause(1)
 
-    #     # sample a batch of data
-    #     xb, yb = get_batch('train')
 
-    #     # evaluate the loss
-    #     #print(xb.shape, yb.shape)
-    #     history = model.fit(xb, yb, epochs=epochs_per_iter, verbose=0)
-    print(x.numpy().shape, y.numpy().shape)
+for bit_width in range(2, 6):
+    model = GPTModel()
 
-    model.fit(x, y, epochs=epochs, batch_size=batch_size, steps_per_epoch=steps_per_epoch, validation_split=.2, validation_batch_size=batch_size, validation_steps=10)
+    with tf.device(device):
+        #loss = k.losses.CategoricalCrossentropy(from_logits=True, label_smoothing=1)
+        loss_function = k.losses.SparseCategoricalCrossentropy(from_logits=True)
+        # loss = tf.nn.softmax_cross_entropy_with_logits
+        model.compile(
+            run_eagerly=True,
+            optimizer=k.optimizers.Adam(learning_rate=learning_rate),
+            loss=loss_function
+        )
 
-    losses = estimate_loss()
-    print(f"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
+        x, y = get_training_data()
+        # for iter in tqdm(range(max_iters)):
+        #     # every once in a while evaluate the loss on train and val sets
+        #     if iter % eval_interval == 0:
+        #         losses = estimate_loss()
+        #         print(f"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
 
-    # generate from the model
-    context = np.zeros((1, 1), dtype='float_')
-    #print(decode(model.generate(context, max_new_tokens=500)[0].numpy().tolist()))
+        #     # sample a batch of data
+        #     xb, yb = get_batch('train')
+
+        #     # evaluate the loss
+        #     #print(xb.shape, yb.shape)
+        #     history = model.fit(xb, yb, epochs=epochs_per_iter, verbose=0)
+        print(x.numpy().shape, y.numpy().shape)
+
+        model.fit(x, y, epochs=epochs, batch_size=batch_size, steps_per_epoch=steps_per_epoch, validation_split=.2, validation_batch_size=batch_size, validation_steps=10)
+
+        losses = estimate_loss()
+        bit_width_results[bit_width] = losses['val']
+        print(f"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
+        graph.clear()
+        #fig.clear()
+        bit_widths = list(bit_width_results.keys())
+        validation_losses = list(bit_width_results.values())
+        graph.bar(bit_widths, validation_losses)
+        graph.set_xlabel('Bit Width')
+        graph.set_ylabel('Validation Loss')
+        graph.set_title('NanoGPT Validation Loss across different Bit Widths')
+        plt.pause(1)
+print(bit_width_results)
+plt.savefig('bit_width_results.png')
+
+        # generate from the model
+        #context = np.zeros((1, 1), dtype='float_')
+        #print(decode(model.generate(context, max_new_tokens=500)[0].numpy().tolist()))
