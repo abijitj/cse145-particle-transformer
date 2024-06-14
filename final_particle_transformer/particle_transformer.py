@@ -51,8 +51,10 @@ class ParticleTransformer(k.Model):
         if cls_block_params is not None:
             cfg_cls_block.update(cls_block_params)
         
-        self.pair_extra_dim = pair_extra_dim
+        # self.pair_extra_dim = pair_extra_dim
         self.embed = Embed(input_dim, embed_dims, activation=activation) if len(embed_dims) > 0 else k.layers.Lambda(lambda x: x)
+
+        self.test_linear = k.layers.Dense(10) 
         self.pair_embed = PairEmbed(
             pair_input_dim, pair_extra_dim, pair_embed_dims + [cfg_block['num_heads']],
             remove_self_pair=remove_self_pair, use_pre_activation_pair=use_pre_activation_pair,
@@ -62,52 +64,47 @@ class ParticleTransformer(k.Model):
         self.cls_blocks = [Block(**cfg_cls_block) for _ in range(num_cls_layers)]
         self.norm = k.layers.LayerNormalization()
         
-        self.fc = k.Sequential()
+        # self.fc = k.Sequential()
+        self.fc = []
         # self.fc.add(k.layers.Input(shape=()))
         if fc_params is not None:
             in_dim = embed_dim 
             for out_dim, drop_rate in fc_params:
-                self.fc.add(k.layers.Dense(out_dim, input_shape=(in_dim,)))
-                self.fc.add(k.layers.ReLU())
-                self.fc.add(k.layers.Dropout(drop_rate))
+                self.fc.append(k.layers.Dense(out_dim, input_shape=(in_dim,)))
+                self.fc.append(k.layers.ReLU())
+                self.fc.append(k.layers.Dropout(drop_rate))
                 in_dim = out_dim 
-            self.fc.add(k.layers.Dense(num_classes)) #input_dim = in_dim
+            self.fc.append(k.layers.Dense(num_classes)) #input_dim = in_dim
         else: 
             self.fc = None 
         
         self.cls_token = self.add_weight(shape=(1, 1, embed_dim), initializer='random_normal', trainable=True)
-        trunc_normal_(self.cls_token, std=0.02)
+        # trunc_normal_(self.cls_token, std=0.02)
 
-        #self.mask_transpose = k.layers.Permute((2, 0, 1))
+        # self.mask_transpose = k.layers.Permute((2, 0, 1))
     
     
     def get_config(self): 
         config = super().get_config()
         config.update({
-            "input_dim": self.input_dim,
-            "num_classes": self.num_classes,
-            "pair_input_dim": self.pair_input_dim,
-            "pair_extra_dim": self.pair_extra_dim,
-            "remove_self_pair": self.remove_self_pair,
-            "use_pre_activation_pair": self.use_pre_activation_pair,
-            "embed_dims": self.embed_dims,
-            "pair_embed_dims": self.pair_embed_dims,
-            "num_heads": self.num_heads,
-            "num_layers": self.num_layers,
-            "num_cls_layers": self.num_cls_layers,
-            "block_params": self.block_params,
-            "cls_block_params": self.cls_block_params,
-            "fc_params": self.fc_params,
-            "activation": self.activation,
-            "trim": self.trim,
+            "fc" : self.fc, 
+            "norm" : self.norm, 
+            "cls_token" : self.cls_token,
+            "cls_blocks" : self.cls_blocks,
+            "blocks" : self.blocks, 
+            "embed" : self.embed, 
+            "pair_embed" : self.pair_embed, 
+            "trimmer": self.trimmer,
             "for_inference": self.for_inference,
-            "use_amp": self.use_amp
+            "use_amp": self.use_amp,
+            "test_linear" : self.test_linear
         })
         return config 
 
     # def call(self, x, v=None, mask=None, uu=None, uu_idx=None, training=False):
-    def call(self, inputs, v=None, mask=None, uu=None, uu_idx=None, training=False):
+    def call(self, inputs, uu=None, uu_idx=None, training=False):
         """
+            inputs: (x, v, mask)
             x: (N, C, P) 
             v: (N, 4, P) [px,py,pz,energy]
             mask: (N, 1, P) -- real particle = 1, padded = 0
@@ -118,22 +115,19 @@ class ParticleTransformer(k.Model):
         v = inputs[1] # pf_vectors
         mask = inputs[2] # pf_mask 
 
+        print("STARTING ParT...", x.shape, v.shape, mask.shape)
+        batch_size = tf.shape(x)[0]
+
         if not self.for_inference:
             if uu_idx is not None:
                 uu = build_sparse_tensor(uu, uu_idx, tf.shape(x)[-1])
-            
-            # print("Before sequence trimmer x.shape:", x.shape)
-            # print("Before sequence trimmer mask.shape:", mask.shape if mask is not None else "Mask is None")
-
+        
             print("hello21:", x.shape)
             # x, v, mask, uu = self.trimmer(x, v=v, mask=mask, uu=uu)
             x, v, mask = self.trimmer(x, v=v, mask=mask)
             mask = tf.reshape(mask, (tf.shape(x)[0], 1, tf.shape(x)[2])) # (B, 1, 128)
             v = tf.reshape(v, (tf.shape(x)[0], 4, 128)) # (B, 4, 128)
             print("hello22:", x.shape, v.shape, mask.shape)
-
-            # print("After sequence trimmer x.shape:", x.shape)
-            # print("After sequence trimmer mask.shape:", mask.shape if mask is not None else "Mask is None")
 
             padding_mask = tf.logical_not(tf.squeeze(mask, axis=1))  # assuming mask is of shape (N, 1, P)
         
@@ -145,6 +139,7 @@ class ParticleTransformer(k.Model):
         print("1: x.shape: ", x.shape, "mask.shape: ", mask.shape)
         mask_permute = tf.transpose(~mask, perm=(2,0,1))
         x = tf.where(mask_permute, x, 0)  # (P, N, C)
+        # x.shape = (128, 96, 128)
         print("2: x.shape: ", x.shape, "mask.shape: ", mask.shape)
 
         attn_mask = None
@@ -154,6 +149,7 @@ class ParticleTransformer(k.Model):
             attn_mask = self.pair_embed(v)
             attn_mask = tf.reshape(attn_mask, (-1, tf.shape(v)[-1], tf.shape(v)[-1])) # (N*num_heads, P, P)
         print('padding_mask', padding_mask.shape, 'attn_mask', attn_mask.shape, 'x', x.shape)
+        
         # transform
         for i, block in enumerate(self.blocks):
             print(f"Calling particle attention block...{i}", x.shape)
@@ -161,9 +157,8 @@ class ParticleTransformer(k.Model):
             print(f"After calling particle attention block...{i}", x.shape)
         
         # extract class token 
-        # cls_tokens = tf.tile(self.cls_token, [1, tf.shape(x)[1], -1]) 
-        # print("Pre-broadcast: ", self.cls_token.shape)
-        batch_size = tf.shape(x)[1]
+        cls_tokens = tf.tile(self.cls_token, [1, tf.shape(x)[1], -1]) 
+        print("Pre-broadcast: ", self.cls_token.shape)
         cls_tokens = tf.broadcast_to(self.cls_token, [1, batch_size, self.cls_token.shape[-1]]) #(1, N, C)
         # print("Post-broadcast: ", cls_tokens.shape)
         for i, block in enumerate(self.cls_blocks):
@@ -171,15 +166,39 @@ class ParticleTransformer(k.Model):
             cls_tokens = block(x, x_cls=cls_tokens, padding_mask=padding_mask)
             print(f"After calling class attention block...{i}", x.shape, cls_tokens.shape)
 
-        print("Before squeeze", cls_tokens.shape) # (1, batch_size, embed_dim)
+        # print("Before squeeze", cls_tokens.shape) # (1, batch_size, embed_dim)
         x_cls = tf.squeeze(self.norm(cls_tokens), axis=0) # removes the first dimension
+        print("104: ", x_cls.shape)
         
         if self.fc is None:
             return x_cls
 
         print("Before fc", x_cls.shape)
-        output = self.fc(x_cls)
+        # output = self.fc(x_cls)
+        for layer in self.fc: 
+            x_cls = layer(x_cls)
+            output = x_cls
+
         if self.for_inference:
             output = k.layers.Softmax()(output, axis=-1)
+
+        # updates = tf.ones([tf.shape(x)[0]]) # batch_size of 1s
+        # indices = tf.range(tf.shape(x)[0]) # indices from [0, batch_size)
+
+        # output = tf.Variable(tf.zeros([tf.shape(x)[0], 10]), dtype=tf.float32)
+        # print("101:", x.shape)
+        # output = tf.transpose(x, [1, 0, 2]) # (96, 128, 128)
+        # print("102:", output.shape)
+        # output = tf.reshape(output, [batch_size, -1]) # (96, 128 * 128)
+        # print("103:", output.shape)
+
+        # output = self.test_linear(output) # (96, 10)
+
+        # #Target shape = (96, 10)
+
+        # # output = tf.random.uniform(shape=[batch_size, 10], minval=0, maxval=1, dtype=tf.float32)
+        # # output[:, 0] = 1.0
+
+        print("100:", output.shape)
         return output
     

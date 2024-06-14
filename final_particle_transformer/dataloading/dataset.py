@@ -16,6 +16,8 @@ from .config import DataConfig, _md5
 from .preprocess import _apply_selection, _build_new_variables, _build_weights, AutoStandardizer, WeightMaker
 
 import glob
+from itertools import islice
+
 
 def _collate_awkward_array_fn(batch, *, collate_fn_map=None):
     return _stack(batch, axis=0)
@@ -425,25 +427,12 @@ def create_tf_dataloader(file_dict, data_config_file):
     #print(file_dict, data_config_file)
     pytorch_dataloader = SimpleIterDataset(file_dict=file_dict, data_config_file=data_config_file, fetch_step=0.0045)
 
-    #def process_pytorch_data(data):
-    #    return ({datum: tf.convert_to_tensor(data[0][datum], dtype=tf.float32) for datum in data[0].keys()}, {'label': tf.constant(data[1]['_label_'], dtype=tf.int32)})
-
-    def process_pytorch_data(data):
-        #print('pffeatureshape', data[0]['pf_features'].shape)
-        #print('dataf', data)
-        #print('data shape: ', len(data), len(data[0]), data[0]['pf_points'].shape)
-        # print((tf.convert_to_tensor(data[0]['pf_points'].reshape(1, -1, -1), tf.float32), tf.constant(data[1]['_label_'], dtype=tf.int32)))
-        # print((tf.convert_to_tensor(data[0]['pf_points'].reshape(1, 2, -1), tf.float32), tf.constant(data[1]['_label_'], dtype=tf.int32)))
-        #print((tf.convert_to_tensor(data[0]['pf_points'], tf.float32), tf.constant(data[1]['_label_'], dtype=tf.int32)))
-        
+    def process_pytorch_data(data):        
         return (#tf.convert_to_tensor(data[0]['pf_points'].reshape(128, 2), tf.float32),
                 tf.convert_to_tensor(data[0]['pf_features'], tf.float32),
                 tf.convert_to_tensor(data[0]['pf_vectors'], tf.float32), 
                 tf.convert_to_tensor(data[0]['pf_mask'], tf.float32),
                 tf.constant(data[1]['_label_'], dtype=tf.int32))
-        #return (tf.convert_to_tensor(data[0]['pf_points'].reshape(1, -1, -1), tf.float32), tf.constant(data[1]['_label_'], dtype=tf.int32))
-        #return (tf.convert_to_tensor(data[0]['pf_points'].reshape(1, -1, -1), tf.float32), tf.constant(data[1]['_label_'], dtype=tf.int32))
-           # {datum: tf.convert_to_tensor(data[0][datum], dtype=tf.float32) for datum in data[0].keys()}, {'label': tf.constant(data[1]['_label_'], dtype=tf.int32)})
     
     """tf_dataloader = tf.data.Dataset.from_generator(lambda: (process_pytorch_data(data) for data in pytorch_dataloader),output_signature = (
         {
@@ -458,6 +447,7 @@ def create_tf_dataloader(file_dict, data_config_file):
     ))"""
 
     tf_dataloader = tf.data.Dataset.from_generator(lambda: (process_pytorch_data(data) for data in pytorch_dataloader),output_signature = (
+    # tf_dataloader = tf.data.Dataset.from_generator(lambda: (process_pytorch_data(data) for data in islice(pytorch_dataloader, 0, 96 * 20)),output_signature = (
         #tf.TensorSpec(shape=(128, 2), dtype=tf.float32),
         tf.TensorSpec(shape=(17, 128), dtype=tf.float32),
         tf.TensorSpec(shape=(4, 128), dtype=tf.float32),

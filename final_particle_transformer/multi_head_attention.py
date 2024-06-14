@@ -89,7 +89,7 @@ class Head(keras.Model):
 
 
 # @keras.saving.register_keras_serializable(package="ParticleTransformer")
-class MultiHeadAttention(keras.Model): 
+class NewMultiHeadAttention(keras.Model): 
     """ Multiple heads of attention in parallel """
     def __init__(self, num_heads, head_size, n_embd, dropout=0.0): 
         super().__init__()
@@ -100,12 +100,11 @@ class MultiHeadAttention(keras.Model):
 
     def get_config(self): 
         config = super().get_config()
-        config.update(
-            {
-                "Heads" : self.heads, 
-                "Projection" : self.proj, 
-            }
-        )
+        config.update({
+            "heads" : self.heads, 
+            "projection" : self.proj, 
+            "dropout" : self.dropout, 
+        })
         return config 
 
     def call(self, q, k, v, key_padding_mask=None, attn_mask=None, training=False):

@@ -1,7 +1,7 @@
 import numpy as np 
 import tensorflow as tf 
 import keras as k 
-from multi_head_attention import MultiHeadAttention
+from multi_head_attention import NewMultiHeadAttention
 import sys
 
 # @k.saving.register_keras_serializable(package="ParticleTransformer")
@@ -15,10 +15,10 @@ class Block(k.Model):
         self.embed_dim = embed_dim
         self.num_heads = num_heads
         self.head_dim = embed_dim // num_heads
-        self.ffn_dim = embed_dim * ffn_ratio
+        ffn_dim = embed_dim * ffn_ratio
         
         self.pre_attn_norm = k.layers.LayerNormalization()
-        self.attn = MultiHeadAttention(num_heads=num_heads, 
+        self.attn = NewMultiHeadAttention(num_heads=num_heads, 
                                        head_size=self.head_dim,
                                        n_embd=self.embed_dim,
                                        dropout=attn_dropout)
@@ -27,7 +27,7 @@ class Block(k.Model):
         self.dropout = k.layers.Dropout(dropout)
         
         self.pre_fc_norm = k.layers.LayerNormalization()
-        self.fc1 = k.layers.Dense(self.ffn_dim) # input_dim = embed_dim
+        self.fc1 = k.layers.Dense(ffn_dim) # input_dim = embed_dim
         self.act = k.activations.gelu if activation == 'gelu' else k.activations.relu
         self.act_dropout = k.layers.Dropout(activation_dropout)
         self.post_fc_norm = k.layers.LayerNormalization() if scale_fc else None
@@ -40,6 +40,9 @@ class Block(k.Model):
         config = super().get_config()
         config.update(
             {
+                "embed_dim" : self.embed_dim, 
+                "num_heads" : self.num_heads,
+                "head_dim" : self.head_dim, 
                 "PreAttnNorm" : self.pre_attn_norm,
                 "MultiHeadAttention" : self.attn, 
                 "PostAttnNorm" : self.post_attn_norm, 

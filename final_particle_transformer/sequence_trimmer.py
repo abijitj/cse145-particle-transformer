@@ -1,14 +1,16 @@
 import numpy as np 
 import tensorflow as tf
-# import tensorflow_probability as tfp 
-import keras as k 
-from keras import Model 
+import keras as k
+# from tensorflow import keras as k 
+from tensorflow.keras import Model 
+import sys
 
 @tf.function
 def replace_elements(x, maxlen):
     print('hello29', x.shape, maxlen.shape)
     # Expand and broadcast maxlen to shape (b, 1, 1)
-    maxlen_expanded = tf.expand_dims(tf.expand_dims(maxlen, axis=1, name='replaceelements2'), axis=2, name='replaceelements1')
+    # tf.print(maxlen, output_stream=sys.stdout)
+    maxlen_expanded = tf.expand_dims(tf.expand_dims(maxlen, axis=-1, name='replaceelements2'), axis=-1, name='replaceelements1')
     print('hello30', x.shape, maxlen.shape)
     maxlen_broadcasted = tf.broadcast_to(maxlen_expanded, tf.shape(x), name='replaceelements3')
 
@@ -25,7 +27,7 @@ def replace_elements(x, maxlen):
 @tf.function
 # def func(x, v, uu, mask, maxlen):
 def true_fn(x, v, mask, maxlen):
-    maxlen = tf.cast(maxlen, tf.int32, name='func1')
+    # maxlen = tf.cast(maxlen, tf.int32, name='func1')
 
     # def x_func(x, v, uu, maxlen): 
     #mask = mask[:, :, :maxlen]
@@ -52,21 +54,27 @@ def true_fn(x, v, mask, maxlen):
 
     
 # @k.saving.register_keras_serializable(package="ParticleTransformer")
-class SequenceTrimmer(Model):
+class SequenceTrimmer(k.layers.Layer):
     """ Sequence Trimmer for Particle Transformer """
 
     def __init__(self, enabled=False, target=(0.9, 1.02), **kwargs) -> None:
         super(SequenceTrimmer, self).__init__(**kwargs)
         self.enabled = enabled
         self.target = target
-        self._counter = 0
-        # self.q = tf.math.minimum(1.0, tf.random.uniform(shape=[1], minval=target[0], maxval=target[1]))
+        # self._counter = 0
+        self.counter = self.add_weight(
+            name='counter', 
+            shape=(), 
+            initializer='zeros', 
+            dtype=tf.int32, 
+            trainable=False
+        )
 
     def get_config(self):
         config = super().get_config()
         config.update({
             "enabled" : self.enabled,
-            "target" : self.target 
+            "target" : self.target, 
         })
         return config 
 
@@ -126,11 +134,13 @@ class SequenceTrimmer(Model):
         if mask is None:
             mask = tf.ones_like(x[:, :1], name='trimmercall1')
         mask = tf.cast(mask, tf.bool, name='trimmercall2') 
-        print('enabled', self.enabled, 'counter', self._counter)
+        # print('enabled', self.enabled, 'counter', self._counter)
         if self.enabled:
-            #if self._counter < 5:
+            # if self.counter.item() < 5:
+            #     self.counter.assign_add(1)
             #    self._counter += 1
-            #else:
+            # else:
+            if tf.equal(self.counter, 5): 
                 if training:
                     q = min(1, np.random.uniform(*self.target))
                     # q = tf.math.minimum(1, tf.random.uniform(shape=[2], minval=self.target[0], maxval=self.target[1]))#np.random.uniform(*self.target))
@@ -140,9 +150,10 @@ class SequenceTrimmer(Model):
                     print("Starting quantile...1")
                     print("mask.shape: ", mask.shape)
                     # print("q.shape: ", q.shape)
-                    mask_sum = tf.reduce_sum(tf.cast(mask, x.dtype), axis=-1, name='trimmercall3')
+                    # mask_sum = tf.reduce_sum(tf.cast(mask, x.dtype), axis=-1, name='trimmercall3')
+                    mask_sum = tf.reduce_sum(tf.cast(mask, tf.float32), axis=-1, name='trimmercall3')
                     print("Starting quantile...2")
-                    maxlen = tf.cast(self.tf_quantile(mask_sum, q),dtype=tf.int32)
+                    maxlen = tf.cast(self.tf_quantile(mask_sum, q), dtype=tf.int32)
                     
                     print("Starting quantile...3")
                     #------------------
@@ -180,21 +191,27 @@ class SequenceTrimmer(Model):
                 else:
                     print("else branch")
                     mask = tf.cast(mask, tf.int32, name='trimmercall13')
-                    maxlen = tf.reduce_max(tf.reduce_sum(mask, axis=-1, name='trimmercall14'), name='trimmercall15')
+                    print("hello123:", mask.shape, mask.dtype) # mask = (N, 1, 128)
+                    mask_sum = tf.reduce_sum(mask, axis=-1)
+                    maxlen = tf.reduce_max(mask_sum)
+                    # maxlen = tf.reduce_max(tf.reduce_sum(mask, axis=-1, name='trimmercall14'), name='trimmercall15')
+                    print("hello124:", maxlen.shape, maxlen.dtype, mask.shape, mask.dtype)
                     mask = tf.cast(mask, tf.bool, name='trimmercall21')
                 print("hello11")
-                print("maxlen type: ", type(maxlen))
+                print("maxlen type: ", maxlen.dtype, maxlen.shape)
                 # maxlen = tf.math.maximum(tf.math.round(maxlen, name='trimmercall16'), 1, name='trimmercall17')
                 maxlen = tf.math.maximum(maxlen, 1, name='trimmercall17')
-                print("hello12")
+                print("hello12", maxlen.dtype, type(maxlen))
                 # true_fn = lambda: func(x, v, mask, maxlen)
                 # false_fn = lambda: (x, v, mask)
 
-                print("hello20:", x.shape)
-                condition = (tf.cast(maxlen, tf.float32) < tf.cast(tf.shape(mask, name='trimmercall19')[-1], tf.float32, name='trimmercall20'))
+                print("hello20:", x.shape, x.dtype, v.dtype, mask.dtype, maxlen.dtype, maxlen.shape) 
+                condition = (maxlen < tf.cast(tf.shape(mask, name='trimmercall19')[-1], tf.int32, name='trimmercall20'))
                 x, v, mask = tf.cond(condition, 
                            lambda: true_fn(x, v, mask, maxlen),
                            lambda: (x, v, mask), name='trimmercall18')
                 print("hello18:", x.shape, v.shape, mask.shape) 
+            else: 
+                self.counter.assign_add(1)
 
         return x, v, mask

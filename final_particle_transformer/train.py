@@ -2,6 +2,8 @@
 from glob import glob
 import numpy as np
 import tensorflow as tf
+# from tensorflow import keras as k 
+
 import keras as k
 from particle_transformer import ParticleTransformer 
 import traceback 
@@ -16,15 +18,15 @@ if __name__ == '__main__':
         device = "/GPU:0" if tf.config.list_physical_devices('GPU') else "/cpu:0"
 
         tf.random.set_seed(0)
-        np.random.seed(0)
+        # np.random.seed(0)
 
         # Hyperparameters
         learning_rate = 3e-3 #5e-4
         batch_size = 96 #16 #192 #96
 
-        epochs = 1 #15 #2000
-        steps_per_epoch = 1 #2000 #500
-        validation_steps = 1 #150 #70
+        epochs = 15 #2000
+        steps_per_epoch = 500 #1 #2000 #500
+        validation_steps = 70 #1 #150 #70
         
         print(tf.config.list_physical_devices(), device)
 
@@ -38,20 +40,6 @@ if __name__ == '__main__':
         train_dataloader = create_tf_dataloader(train_file_dict, data_config_file)
         validation_dataloader = create_tf_dataloader(validation_file_dict, data_config_file)
         
-        # counts= {0: 0, 1: 0, 2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0}
-        # i = 0
-        # for test in train_dataloader:
-        #     print("THIS IS THE DATALOADER!!!")
-        #     #print(len(test)) # 2
-        #     #print("something1", test[0].shape, test[1].shape) # (2, 128), ()
-        #     print(test[1])
-        #     counts[int(test[1])] += 1
-        #     i += 1
-
-        #     if i == 100000:
-        #         break
-
-        # print('counts', counts)
 
         def mapping(pf_features, pf_vectors, pf_mask, label):
             return (pf_features, pf_vectors, pf_mask), label 
